@@ -3,7 +3,6 @@ Anyway I want symbols.
 At first, prepare ctags file, and then, activate this extension by `Symbol by Ctags` command.
 
 
-====================
 Known Issues
 ====================
 
