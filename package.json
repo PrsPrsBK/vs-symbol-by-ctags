@@ -1,6 +1,6 @@
 {
   "name": "symbol-by-ctags",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "utilize symbols made with ctags",
   "author": "PrsPrsBK",
   "publisher": "PrsPrsBK",
@@ -38,10 +38,18 @@
             {
               "type": "object",
               "properties": {
-                "name": { "type": "string" },
-                "glob": { "type": "string" },
-                "exec": { "type": "string" },
-                "tags": { "type": "string" }
+                "name": {
+                  "type": "string"
+                },
+                "glob": {
+                  "type": "string"
+                },
+                "exec": {
+                  "type": "string"
+                },
+                "tags": {
+                  "type": "string"
+                }
               }
             }
           ],
