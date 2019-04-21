@@ -4,11 +4,10 @@ import fs from 'fs';
 export function activate(context: vscode.ExtensionContext) {
   console.log('"symbol-by-ctags" is now active!');
 
-  let disposable = vscode.commands.registerCommand('extension.helloWorld', () => {
-    vscode.window.showInformationMessage('HelloAA World!');
+  const activateCommand = vscode.commands.registerCommand('extension.getSymbols', () => {
+    vscode.window.showInformationMessage('activated: Symbol by Ctags');
   });
-
-  context.subscriptions.push(disposable);
+  context.subscriptions.push(activateCommand);
 
   context.subscriptions.push(
     vscode.languages.registerDocumentSymbolProvider(
