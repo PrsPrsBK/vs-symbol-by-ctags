@@ -1,0 +1,34 @@
+{
+  "name": "symbol-by-ctags",
+  "version": "1.0.0",
+  "description": "utilize symbols made with ctags",
+  "author": "PrsPrsBK",
+  "license": "MIT",
+  "repository": "https://github.com/PrsPrsBK/symbol-by-ctags",
+  "devDependencies": {
+    "@types/node": "^11.13.6",
+    "vscode": "^1.1.33"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onCommand:extension.helloWorld"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "extension.helloWorld",
+        "title": "Hello World"
+      }
+    ]
+  },
+  "engines": {
+    "vscode": "^1.33.0"
+  },
+  "scripts": {
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./"
+  }
+}

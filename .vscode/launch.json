@@ -1,0 +1,18 @@
+{
+"version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Sym-By-Ctags",
+      "type": "extensionHost",
+      "request": "launch",
+      "runtimeExecutable": "${execPath}",
+      "args": [
+        "--folder-uri=${workspaceFolder}/test_tree",
+        "--extensionDevelopmentPath=${workspaceFolder}"
+      ],
+      "outFiles": [
+        "${workspaceFolder}/out/*.js"
+      ]
+    }
+  ]
+}
