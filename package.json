@@ -13,16 +13,41 @@
     "Other"
   ],
   "activationEvents": [
-    "onCommand:extension.getSymbols"
+    "onCommand:extension.symbolByCtags"
   ],
   "main": "./out/extension.js",
   "contributes": {
     "commands": [
       {
-        "command": "extension.getSymbols",
-        "title": "Get Symbols"
+        "command": "extension.symbolByCtags",
+        "title": "Symbol by Ctags"
       }
-    ]
+    ],
+    "configuration": {
+      "title": "Symbol by Ctags",
+      "properties": {
+        "SymbolByCtags.tags": {
+          "type": "array",
+          "items": "string",
+          "markdownDescription": "An array of tags file name."
+        },
+        "SymbolByCtags.target": {
+          "type": "array",
+          "items": [
+            {
+              "type": "object",
+              "properties": {
+                "name": { "type": "string" },
+                "glob": { "type": "string" },
+                "exec": { "type": "string" },
+                "tags": { "type": "string" }
+              }
+            }
+          ],
+          "markdownDescription": "An array of file types to be targeted."
+        }
+      }
+    }
   },
   "engines": {
     "vscode": "^1.33.0"

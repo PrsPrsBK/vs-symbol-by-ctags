@@ -1,0 +1,13 @@
+{
+  "SymbolByCtags":{
+    "tags": [ ".tags" ],
+    "target": [
+      {
+        "name": "reStructuredText(just description)",
+        "glob": "**/*.rst",
+        "exec": "command(not yet)",
+        "tags": [ ".tags(not yet)" ]
+      }
+    ]
+  }
+}
