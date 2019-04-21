@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "description": "utilize symbols made with ctags",
   "author": "PrsPrsBK",
+  "publisher": "PrsPrsBK",
   "license": "MIT",
   "repository": "https://github.com/PrsPrsBK/vs-symbol-by-ctags",
   "devDependencies": {
