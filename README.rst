@@ -10,7 +10,8 @@ In short, the capability is limited very much, and under dogfooding.
   ``"workspaceContains:**/.tags"`` or so may be better.
 * tags file name is limited: ``.tags``.
 * tags file needs to exists the same directory as target file.
-* cannot jump between files.
-* cannot rename.
-* cannot generate ctags file.
-* cannot watch the change of ctags file.
+* categorized only as ``Constant``
+* do not jump between files.
+* do not rename.
+* do not generate ctags file.
+* (Maybe) do not watch the change of ctags file.

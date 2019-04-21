@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import fs from 'fs';
+import readline from 'readline';
 
 export function activate(context: vscode.ExtensionContext) {
   console.log('"symbol-by-ctags" is now active!');
@@ -14,9 +15,7 @@ export function activate(context: vscode.ExtensionContext) {
   const documentFilterArray: vscode.DocumentFilter[] = [];
   const targetArray = config.get<SbcTarget[]>('target');
   if(targetArray !== undefined) {
-    console.log('yes');
     for(const tgt of targetArray) {
-      console.log(JSON.stringify(tgt));
       documentFilterArray.push({
         pattern: tgt.glob,
         scheme: 'file',
@@ -24,7 +23,6 @@ export function activate(context: vscode.ExtensionContext) {
     }
   }
   if(documentFilterArray.length > 0) {
-    console.log('register');
     context.subscriptions.push(
       vscode.languages.registerDocumentSymbolProvider(
         documentFilterArray,
@@ -52,23 +50,38 @@ export class CtagsDocumentSymbolProvider implements vscode.DocumentSymbolProvide
 
   public provideDocumentSymbols(
     document: vscode.TextDocument,
-    _token: vscode.CancellationToken): vscode.SymbolInformation[] {
+    _token: vscode.CancellationToken) {
 
     //'.' means directory of code.exe
     const fileName = document.uri.path.replace(/.*\/([^\/]+)/, '$1');
     const dirName = document.uri.fsPath.replace(fileName, '');
-    if(fs.existsSync(`${dirName}/.tags`)) {
-    }
     const result: vscode.SymbolInformation[] = [];
-    result.push(
-      new vscode.SymbolInformation(
-        'foo_function',
-        vscode.SymbolKind.Function,
-        '',
-        new vscode.Location(document.uri, new vscode.Position(10, 0))
-      )
-    );
-
-    return result;
+    return new Promise<vscode.SymbolInformation[]>((resolve, reject) => {
+      if(fs.existsSync(`${dirName}/.tags`)) {
+        const rs = fs.createReadStream(`${dirName}/.tags`);
+        const lines = readline.createInterface(rs);
+        lines.on('line', line => {
+          const tokens = line.split('\t');
+          if(tokens[1] === fileName) {
+            const pos = parseInt(tokens[4].split(':')[1]);
+            result.push(
+              new vscode.SymbolInformation(
+                tokens[0],
+                vscode.SymbolKind.Constant,
+                '',
+                new vscode.Location(document.uri, new vscode.Position(pos, 0))
+              )
+            );
+          }
+        });
+        lines.on('close', () => {
+          rs.destroy();
+          resolve(result);
+        });
+      }
+      else {
+        reject(result);
+      }
+    });
   }
 }
