@@ -4,7 +4,7 @@
   "description": "utilize symbols made with ctags",
   "author": "PrsPrsBK",
   "license": "MIT",
-  "repository": "https://github.com/PrsPrsBK/symbol-by-ctags",
+  "repository": "https://github.com/PrsPrsBK/vs-symbol-by-ctags",
   "devDependencies": {
     "@types/node": "^11.13.6",
     "vscode": "^1.1.33"
