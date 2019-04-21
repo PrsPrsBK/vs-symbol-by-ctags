@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import fs from 'fs';
 
 export function activate(context: vscode.ExtensionContext) {
   console.log('"symbol-by-ctags" is now active!');
@@ -11,7 +12,7 @@ export function activate(context: vscode.ExtensionContext) {
 
   context.subscriptions.push(
     vscode.languages.registerDocumentSymbolProvider(
-      'somelang',
+      { pattern: '**/*.rst', scheme: 'file', },
       new CtagsDocumentSymbolProvider()
     )
   );
