@@ -26,6 +26,10 @@ export class CtagsDocumentSymbolProvider implements vscode.DocumentSymbolProvide
     document: vscode.TextDocument,
     _token: vscode.CancellationToken): vscode.SymbolInformation[] {
 
+    //'.' means directory of code.exe
+    const fileName = document.uri.path.replace(/.*\/([^\/]+)/, '$1');
+    const dirName = document.uri.fsPath.replace(fileName, '');
+    let wk = fs.existsSync(`${dirName}/.tags`);
     const result: vscode.SymbolInformation[] = [];
     result.push(
       new vscode.SymbolInformation(
