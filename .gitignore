@@ -2,3 +2,5 @@ node_modules/
 out/
 test_tree/
 *.lock
+*.vsix
+*.zip
