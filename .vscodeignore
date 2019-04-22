@@ -1,5 +1,7 @@
 .vscode/
 src/
 test_tree/
+test_tree2/
 .gitignore
 tsconfig.json
+*.zip
