@@ -2,12 +2,25 @@
 "version": "0.2.0",
   "configurations": [
     {
-      "name": "Sym-By-Ctags",
+      "name": "Sym-By-C01",
       "type": "extensionHost",
       "request": "launch",
       "runtimeExecutable": "${execPath}",
       "args": [
         "--folder-uri=${workspaceFolder}/test_tree",
+        "--extensionDevelopmentPath=${workspaceFolder}"
+      ],
+      "outFiles": [
+        "${workspaceFolder}/out/*.js"
+      ]
+    },
+    {
+      "name": "Sym-By-C02",
+      "type": "extensionHost",
+      "request": "launch",
+      "runtimeExecutable": "${execPath}",
+      "args": [
+        "--folder-uri=${workspaceFolder}/test_tree2",
         "--extensionDevelopmentPath=${workspaceFolder}"
       ],
       "outFiles": [

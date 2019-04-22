@@ -43,7 +43,7 @@ interface SbcTarget {
   name: string;
   glob: string;
   exec: string;
-  tags: string;
+  tags: string[];
 }
 
 export class CtagsDocumentSymbolProvider implements vscode.DocumentSymbolProvider {
@@ -63,13 +63,15 @@ export class CtagsDocumentSymbolProvider implements vscode.DocumentSymbolProvide
         lines.on('line', line => {
           const tokens = line.split('\t');
           if(tokens[1] === fileName) {
-            const pos = parseInt(tokens[4].split(':')[1]);
+            const pos = tokens.length > 4
+              ? parseInt(tokens[4].split(':')[1]) // lines:n
+              : parseInt(tokens[2].replace(';"', '')); // nn;"
             result.push(
               new vscode.SymbolInformation(
                 tokens[0],
                 vscode.SymbolKind.Constant,
                 '',
-                new vscode.Location(document.uri, new vscode.Position(pos, 0))
+                new vscode.Location(document.uri, new vscode.Position(pos - 1, 0))
               )
             );
           }
