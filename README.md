@@ -21,6 +21,75 @@ hello	foo.rst	/^hello$/;"	s	line:183	section:RootSection|ParentSection
 world	foo.rst	/^world$/;"	s	line:6	section:RootSection
 ```
 
+Config
+====================
+
+For workspace following, write to `some.code-workspace` file:
+
+```console
+(xxx):.
+├─some.code-workspace
+├─WsRoot
+│  ├─Folder01
+│  ├─Folder02
+│  └─Folder03
+```
+
+```some.code-workspace
+{
+  "folders": [
+    {
+      "path": "WsRoot/Folder01"
+    },
+    {
+      "path": "WsRoot/Folder02"
+    },
+    {
+      "path": "WsRoot/Folder03"
+    }
+  ],
+  "settings": {
+    "editor.tabSize": 2, // or so...
+
+    "SymbolByCtags":{
+      "tags": [ ".tags" ],
+      "target": [
+        {
+          "name": "reStructuredText(just description)",
+          "glob": "**/*.rst",
+          "exec": "command(not yet)",
+          "tags": [ ".tags(not yet)" ]
+        },
+        {
+          "name": "pony",
+          "glob": "**/*.pony",
+          "exec": "command(not yet)",
+          "tags": [ ".tags(not yet)" ]
+        }
+      ]
+    }
+  }
+}
+```
+
+In the case that you use 'Open as folder', write to `someFolder/.vscode/settings.json`:
+
+```console
+(someFolder):.
+├─.vscode/
+│  └─settings.json
+├─yourWork/
+├─
+```
+
+```settings.json
+{
+  "SymbolByCtags":{
+    // some settings
+  }
+}
+```
+
 Known Issues
 ====================
 
