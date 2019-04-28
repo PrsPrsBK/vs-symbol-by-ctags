@@ -37,8 +37,19 @@ hello	foo.rst	/^hello$/;"	s	line:183	section:RootSection|ParentSection
 world	foo.rst	/^world$/;"	s	line:6	section:RootSection
 ```
 
-Config
+Settings
 ====================
+
+`target` array has settings-objects for each lauguage,
+and each settings-object has some properties.
+
+* `name`: string. some description.
+* `glob`: Glob string. `**/*.rst` or so.
+  [reference for Glob](https://code.visualstudio.com/api/references/vscode-api#GlobPattern)
+* `ends`: array of string used to match settings with files. [ `.rst` ] or so.
+* `kindMap`: object. Mapping ctag's `kind` (1 length string) to VS Code's `SymbolKind`.
+  [reference for SymbolKind](https://code.visualstudio.com/api/references/vscode-api#SymbolKind)
+
 
 For workspace following, write to `some.code-workspace` file:
 
@@ -68,19 +79,30 @@ For workspace following, write to `some.code-workspace` file:
     "editor.tabSize": 2, // or so...
 
     "SymbolByCtags":{
-      "tags": [ ".tags" ],
       "target": [
         {
           "name": "reStructuredText(just description)",
           "glob": "**/*.rst",
-          "exec": "command(not yet)",
-          "tags": [ ".tags(not yet)" ]
+          "ends": [ ".rst" ],
+          "kindMap": {
+            "s": "Struct",
+          }
         },
         {
           "name": "pony",
           "glob": "**/*.pony",
-          "exec": "command(not yet)",
-          "tags": [ ".tags(not yet)" ]
+          "ends": [ ".pony" ],
+          "kindMap": {
+            "a": "Class",
+            "b": "Function",
+            "c": "Class",
+            "f": "Function",
+            "i": "Interface",
+            "n": "Constructor",
+            "t": "Interface",
+            "p": "Class",
+            "y": "Class",
+          }
         }
       ]
     }
@@ -110,13 +132,18 @@ Known Issues
 ====================
 
 In short, the capability is limited very much, and under dogfooding.
+Maybe all things are easy to be changed, excuse me.
 
 * need to be activated by command.
   `"workspaceContains:**/.tags"` or so may be better.
 * tags file name is limited: `.tags`.
 * tags file needs to exists the same directory as target file.
-* categorized only as `Constant`
 * do not jump between files.
 * do not rename.
 * do not generate ctags file.
 * (Maybe) do not watch the change of ctags file.
+
+Release Notes
+====================
+
+* 2019-04-29 0.2.0 `ends` and `kindMap` settings
