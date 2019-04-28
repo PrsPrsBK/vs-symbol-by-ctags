@@ -27,11 +27,6 @@
     "configuration": {
       "title": "Symbol by Ctags",
       "properties": {
-        "SymbolByCtags.tags": {
-          "type": "array",
-          "items": "string",
-          "markdownDescription": "An array of tags file name."
-        },
         "SymbolByCtags.target": {
           "type": "array",
           "items": [
@@ -44,12 +39,12 @@
                 "glob": {
                   "type": "string"
                 },
-                "exec": {
-                  "type": "string"
-                },
-                "tags": {
+                "ends": {
                   "type": "array",
                   "items": "string"
+                },
+                "kindMap": {
+                  "type": "object"
                 }
               }
             }

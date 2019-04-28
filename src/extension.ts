@@ -36,7 +36,6 @@ export function activate(context: vscode.ExtensionContext) {
 export function deactivate() { }
 
 interface SbcConfig extends vscode.WorkspaceConfiguration {
-  tags: string[];
   target: SbcTarget[];
 }
 
@@ -45,8 +44,6 @@ interface SbcTarget {
   glob: string;
   ends: string[];
   kindMap: any;
-  exec: string;
-  tags: string[];
 }
 
 export class CtagsDocumentSymbolProvider implements vscode.DocumentSymbolProvider {
