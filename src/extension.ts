@@ -1,7 +1,6 @@
 import * as vscode from 'vscode';
 import fs from 'fs';
 import readline from 'readline';
-import { rejects } from 'assert';
 
 export function activate(context: vscode.ExtensionContext) {
   console.log('"symbol-by-ctags" is now active!');
