@@ -66,10 +66,17 @@ export class CtagsDocumentSymbolProvider implements vscode.DocumentSymbolProvide
             const pos = tokens.length > 4
               ? parseInt(tokens[4].split(':')[1]) // lines:n
               : parseInt(tokens[2].replace(';"', '')); // nn;"
+            let kind = vscode.SymbolKind.Constructor;
+            if(tokens[3] === 'f') {
+              kind = vscode.SymbolKind.Function;
+            }
+            if(tokens[3] === 'c') {
+              kind = vscode.SymbolKind.Class;
+            }
             result.push(
               new vscode.SymbolInformation(
                 tokens[0],
-                vscode.SymbolKind.Constant,
+                kind,
                 '',
                 new vscode.Location(document.uri, new vscode.Position(pos - 1, 0))
               )
