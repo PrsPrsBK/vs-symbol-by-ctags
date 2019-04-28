@@ -5,7 +5,7 @@ At first, prepare ctags file, and then, activate this extension by `Symbol by Ct
 tags file format
 ====================
 
-Now we handle two types, and **need LineNumber**.
+Now we support two formats, and **need LineNumber**.
 
 ```console
 # this is output of Exuberant Ctags
@@ -16,7 +16,8 @@ apply	main.pony	17;"	f
 
 ```console
 # this is output of rst2ctags.py
-# Symbol Name \t File Name \t regex;" \t Type of Symbol \t line:LineNumber \t something of structure
+# Symbol Name \t File Name \t regex;" \t Type of Symbol \t line:LineNumber \t something of structure(if exists)
+RootSection	foo.rst	/^RootSection$/;"	s	line:2
 hello	foo.rst	/^hello$/;"	s	line:183	section:RootSection|ParentSection
 world	foo.rst	/^world$/;"	s	line:6	section:RootSection
 ```
