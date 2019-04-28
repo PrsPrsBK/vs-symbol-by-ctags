@@ -1,22 +1,37 @@
 Anyway I want symbols.
 
+Sometimes there is no language support like FooLang-mode or language server,
+such that works well with symbols (jump between them or so).
+But you want to edit files right now -- in my case, reStructuredText and Pony files.
+So let's utilize ctags.
+
 At first, prepare ctags file, and then, activate this extension by `Symbol by Ctags` command.
 
 tags file format
 ====================
 
-Now we support two formats, and **need LineNumber**.
+Currently, we support two formats, and **need LineNumber**.
 
 ```console
 # this is output of Exuberant Ctags
-# Symbol Name \t File Name \t LineNumber;" \t Type of Symbol
+# for example, `ctags -f .tags --sort=no --excmd=number *`
+# Symbol Name \t File Name \t LineNumber;" \t Type of Symbol(1 length)
 WordHandler	main.pony	8;"	c
 apply	main.pony	17;"	f
 ```
 
 ```console
+# this is another output format of Exuberant Ctags.
+# for example, `ctags -f .tags_fields --sort=no --fields=nksaSmtf *`
+# Symbol Name \t File Name \t regex;" \t Type of Symbol(1 length) \t line:LineNumber \t something...
+WordHandler	main.pony	/^class WordHandler is ReadlineNotify$/;"	c	line:8
+apply	main.pony	/^  fun ref apply(line: String, prompt: Promise[String]) =>$/;"	f	line:17
+```
+
+```console
 # this is output of rst2ctags.py
-# Symbol Name \t File Name \t regex;" \t Type of Symbol \t line:LineNumber \t something of structure(if exists)
+# for example, `python x:/path/to/rst2ctags.py -f .tags --sort=no foo.rst bar.rst baz.rst`
+# Symbol Name \t File Name \t regex;" \t Type of Symbol(1 length) \t line:LineNumber \t something of structure(if exists)
 RootSection	foo.rst	/^RootSection$/;"	s	line:2
 hello	foo.rst	/^hello$/;"	s	line:183	section:RootSection|ParentSection
 world	foo.rst	/^world$/;"	s	line:6	section:RootSection
