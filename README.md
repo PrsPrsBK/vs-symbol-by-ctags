@@ -147,6 +147,11 @@ Known Issues
 In short, the capability is limited very much, and under dogfooding.
 Maybe all things are easy to be changed, excuse me.
 
+* impossible to nest symbols, because `container` arg of `SymbolInformation` does not work...
+
+  * and also, can not resort to `DocumentSymbol`, maybe because ctags does not know `range` as the region of definition on the file
+    ([DocumentSymbol](https://code.visualstudio.com/api/references/vscode-api#DocumentSymbol)).
+
 * need to be activated by command.
   `"workspaceContains:**/.tags"` or so may be better.
 * tags file needs to exists the same directory as target file.
