@@ -136,7 +136,6 @@ Maybe all things are easy to be changed, excuse me.
 
 * need to be activated by command.
   `"workspaceContains:**/.tags"` or so may be better.
-* tags file name is limited: `.tags`.
 * tags file needs to exists the same directory as target file.
 * do not jump between files.
 * do not rename.
@@ -147,3 +146,4 @@ Release Notes
 ====================
 
 * 2019-04-29 0.2.0 `ends` and `kindMap` settings
+* 2019-04-29 0.3.0 tags file name is one of 'tags', '.tags', 'TAGS'.
