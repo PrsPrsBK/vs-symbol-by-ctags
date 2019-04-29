@@ -103,6 +103,15 @@ export class CtagsDocumentSymbolProvider implements vscode.DocumentSymbolProvide
       }
       else {
         const kindMap = config !== undefined ? config.kindMap : undefined;
+        const rootSome: string = 'YES';
+        result.push(
+          new vscode.SymbolInformation(
+            rootSome,
+            vscode.SymbolKind.Namespace,
+            '',
+            new vscode.Location(document.uri, new vscode.Position(1 - 1, 0))
+          )
+        );
         const rs = fs.createReadStream(`${dirName}/${tagsFileName}`);
         const lines = readline.createInterface(rs);
         lines.on('line', line => {
@@ -120,7 +129,7 @@ export class CtagsDocumentSymbolProvider implements vscode.DocumentSymbolProvide
               new vscode.SymbolInformation(
                 tokens[0],
                 kind,
-                '',
+                rootSome,
                 new vscode.Location(document.uri, new vscode.Position(pos - 1, 0))
               )
             );
