@@ -3,9 +3,21 @@ Anyway I want symbols.
 Sometimes there is no language support like FooLang-mode or language server,
 such that works well with symbols (jump between them or so).
 But you want to edit files right now -- in my case, reStructuredText and Pony files.
-So let's utilize ctags.
+So let's rely on ctags' power.
 
-At first, prepare ctags file, and then, activate this extension by `Symbol by Ctags` command.
+
+How to use
+====================
+
+At first, prepare tags file, and then, activate this extension by `Symbol by Ctags` command.
+tags file name is one of `tags`, `.tags`, `TAGS`.
+
+If your tags file is load and your target file has symbols, some changes will happen.
+Some items will be appear within `Outline` pane of `Explorer` side-bar,
+and you can search symbols by typing it's name
+via `Control + Shift + o` (or type `@` after `Control + p`)
+(keybinds depends on your settings and physical keyboard. I use japanese keyboard.).
+
 
 tags file format
 ====================
@@ -36,6 +48,7 @@ RootSection	foo.rst	/^RootSection$/;"	s	line:2
 hello	foo.rst	/^hello$/;"	s	line:183	section:RootSection|ParentSection
 world	foo.rst	/^world$/;"	s	line:6	section:RootSection
 ```
+
 
 Settings
 ====================
