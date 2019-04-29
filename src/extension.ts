@@ -45,6 +45,35 @@ interface SbcTarget {
   kindMap: any;
 }
 
+const kind2SymbolKind: any = {
+  'Array': vscode.SymbolKind.Array,
+  'Boolean': vscode.SymbolKind.Boolean,
+  'Class': vscode.SymbolKind.Class,
+  'Constant': vscode.SymbolKind.Constant,
+  'Constructor': vscode.SymbolKind.Constructor,
+  'Enum': vscode.SymbolKind.Enum,
+  'EnumMember': vscode.SymbolKind.EnumMember,
+  'Event': vscode.SymbolKind.Event,
+  'Field': vscode.SymbolKind.Field,
+  'File': vscode.SymbolKind.File,
+  'Function': vscode.SymbolKind.Function,
+  'Interface': vscode.SymbolKind.Interface,
+  'Key': vscode.SymbolKind.Key,
+  'Method': vscode.SymbolKind.Method,
+  'Module': vscode.SymbolKind.Module,
+  'Namespace': vscode.SymbolKind.Namespace,
+  'Null': vscode.SymbolKind.Null,
+  'Number': vscode.SymbolKind.Number,
+  'Object': vscode.SymbolKind.Object,
+  'Operator': vscode.SymbolKind.Operator,
+  'Package': vscode.SymbolKind.Package,
+  'Property': vscode.SymbolKind.Property,
+  'String': vscode.SymbolKind.String,
+  'Struct': vscode.SymbolKind.Struct,
+  'TypeParameter': vscode.SymbolKind.TypeParameter,
+  'Variable': vscode.SymbolKind.Variable,
+};
+
 export class CtagsDocumentSymbolProvider implements vscode.DocumentSymbolProvider {
   configArray: Array<SbcTarget>;
 
@@ -76,86 +105,9 @@ export class CtagsDocumentSymbolProvider implements vscode.DocumentSymbolProvide
               ? parseInt(tokens[4].split(':')[1]) // lines:n
               : parseInt(tokens[2].replace(';"', '')); // nn;"
             let kind = vscode.SymbolKind.Constructor;
-            if(kindMap !== undefined && kindMap[tokens[3]] !== undefined) {
-              const kindSpec = kindMap[tokens[3]];
-              if(kindSpec === 'Array') {
-                kind = vscode.SymbolKind.Array;
-              }
-              else if(kindSpec === 'Boolean') {
-                kind = vscode.SymbolKind.Boolean;
-              }
-              else if(kindSpec === 'Class') {
-                kind = vscode.SymbolKind.Class;
-              }
-              else if(kindSpec === 'Constant') {
-                kind = vscode.SymbolKind.Constant;
-              }
-              else if(kindSpec === 'Constructor') {
-                kind = vscode.SymbolKind.Constructor;
-              }
-              else if(kindSpec === 'Enum') {
-                kind = vscode.SymbolKind.Enum;
-              }
-              else if(kindSpec === 'EnumMember') {
-                kind = vscode.SymbolKind.EnumMember;
-              }
-              else if(kindSpec === 'Event') {
-                kind = vscode.SymbolKind.Event;
-              }
-              else if(kindSpec === 'Field') {
-                kind = vscode.SymbolKind.Field;
-              }
-              else if(kindSpec === 'File') {
-                kind = vscode.SymbolKind.File;
-              }
-              else if(kindSpec === 'Function') {
-                kind = vscode.SymbolKind.Function;
-              }
-              else if(kindSpec === 'Interface') {
-                kind = vscode.SymbolKind.Interface;
-              }
-              else if(kindSpec === 'Key') {
-                kind = vscode.SymbolKind.Key;
-              }
-              else if(kindSpec === 'Method') {
-                kind = vscode.SymbolKind.Method;
-              }
-              else if(kindSpec === 'Module') {
-                kind = vscode.SymbolKind.Module;
-              }
-              else if(kindSpec === 'Namespace') {
-                kind = vscode.SymbolKind.Namespace;
-              }
-              else if(kindSpec === 'Null') {
-                kind = vscode.SymbolKind.Null;
-              }
-              else if(kindSpec === 'Number') {
-                kind = vscode.SymbolKind.Number;
-              }
-              else if(kindSpec === 'Object') {
-                kind = vscode.SymbolKind.Object;
-              }
-              else if(kindSpec === 'Operator') {
-                kind = vscode.SymbolKind.Operator;
-              }
-              else if(kindSpec === 'Package') {
-                kind = vscode.SymbolKind.Package;
-              }
-              else if(kindSpec === 'Property') {
-                kind = vscode.SymbolKind.Property;
-              }
-              else if(kindSpec === 'String') {
-                kind = vscode.SymbolKind.String;
-              }
-              else if(kindSpec === 'Struct') {
-                kind = vscode.SymbolKind.Struct;
-              }
-              else if(kindSpec === 'TypeParameter') {
-                kind = vscode.SymbolKind.TypeParameter;
-              }
-              else if(kindSpec === 'Variable') {
-                kind = vscode.SymbolKind.Variable;
-              }
+            if(kindMap !== undefined && kindMap[tokens[3]] !== undefined
+              && kind2SymbolKind[kindMap[tokens[3]]] !== undefined) {
+              kind = kind2SymbolKind[kindMap[tokens[3]]];
             }
             result.push(
               new vscode.SymbolInformation(
