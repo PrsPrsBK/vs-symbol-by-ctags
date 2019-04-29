@@ -74,6 +74,8 @@ const kind2SymbolKind: any = {
   'Variable': vscode.SymbolKind.Variable,
 };
 
+const tagsFileList = [ 'tags', '.tags', 'TAGS' ];
+
 export class CtagsDocumentSymbolProvider implements vscode.DocumentSymbolProvider {
   configArray: Array<SbcTarget>;
 
@@ -94,9 +96,14 @@ export class CtagsDocumentSymbolProvider implements vscode.DocumentSymbolProvide
     });
     const result: vscode.SymbolInformation[] = [];
     return new Promise<vscode.SymbolInformation[]>((resolve, reject) => {
-      if(fs.existsSync(`${dirName}/.tags`)) {
+      const tagsFileName = tagsFileList.find(f => { return fs.existsSync(`${dirName}/${f}`); });
+      if(tagsFileName === undefined) {
+        console.error('tags file not found.');
+        reject(result);
+      }
+      else {
         const kindMap = config !== undefined ? config.kindMap : undefined;
-        const rs = fs.createReadStream(`${dirName}/.tags`);
+        const rs = fs.createReadStream(`${dirName}/${tagsFileName}`);
         const lines = readline.createInterface(rs);
         lines.on('line', line => {
           const tokens = line.split('\t');
@@ -123,9 +130,6 @@ export class CtagsDocumentSymbolProvider implements vscode.DocumentSymbolProvide
           rs.destroy();
           resolve(result);
         });
-      }
-      else {
-        reject(result);
       }
     });
   }
