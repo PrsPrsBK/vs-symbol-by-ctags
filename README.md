@@ -147,8 +147,10 @@ Known Issues
 In short, the capability is limited very much, and under dogfooding.
 Maybe all things are easy to be changed, excuse me.
 
-* impossible to nest symbols, because `container` arg of `SymbolInformation` does not work...
+* currently impossible to nest symbols in `DocumentSymbolProvider`, because `container` arg of `SymbolInformation` does not work...
 
+  * TypeScript Language Service looks to be able to utilize this arg at `WorkspaceSymbolProvider`, so this may be resolved in future: 
+    [workspaceSymbols.ts](https://github.com/Microsoft/vscode/blob/e2cf8ebc5d6e827199124b911ff3e25ff38ae2ec/extensions/typescript-language-features/src/features/workspaceSymbols.ts#L53)
   * and also, can not resort to `DocumentSymbol`, maybe because ctags does not know `range` as the region of definition on the file
     ([DocumentSymbol](https://code.visualstudio.com/api/references/vscode-api#DocumentSymbol)).
 
