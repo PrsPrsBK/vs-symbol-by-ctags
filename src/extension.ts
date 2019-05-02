@@ -133,18 +133,25 @@ export class CtagsDocumentSymbolProvider implements vscode.DocumentSymbolProvide
             wk.children = [];
             // case of rst2ctags.py
             if(tokens.length > 5 && tokens[5] !== '' && sro !== '') {
-              let parent: (vscode.DocumentSymbol | undefined);
-              for(const ancestor of tokens[5].split(sro)) {
-                console.log(ancestor);
-                parent = result.find(docSym => {
-                  return docSym.name === ancestor.split(':')[1];
-                });
+              let parent: (vscode.DocumentSymbol | undefined) = undefined;
+              for(const ancestor of tokens[5].slice(8).split(sro)) { // section: ...
+                console.log(`${symbolName}'s ancestor: ${ancestor}`);
+                if(parent === undefined) {
+                  parent = result.find(docSym => {
+                    return docSym.name === ancestor;
+                  });
+                }
+                else {
+                  parent = parent.children.find(docSym => {
+                    return docSym.name === ancestor;
+                  });
+                }
                 if(parent === undefined) {
                   break;
                 }
               }
               if(parent === undefined) {
-                console.error(`${new Date().toLocaleTimeString} ERROR: ${symbolName}: symbol hierarchy spec within tags file`);
+                console.error(`${new Date().toLocaleTimeString()} ERROR: ${symbolName}: symbol hierarchy spec within tags file`);
                 result.push(wk);
               }
               else {
