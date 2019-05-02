@@ -66,7 +66,7 @@ and each settings-object has some properties.
   If the type of symbol is included in this string, 
   the symbol is top of tree and has symbols that appear after 'top' and before next 'restart', as a child.
   **That is, you can have only 1 level depth trees**.
-* `sro`: string that is Scope Resolution Operator.
+* `sro`: string that is Scope Resolution Operator (borrowed from Vim's great Tagbar).
   This works for tags files of extended form, such as one by `rst2ctags.py`.
   **In this case, you can have greater than 1 level depth trees**.
 
@@ -155,17 +155,11 @@ Known Issues
 In short, the capability is limited very much, and under dogfooding.
 Maybe all things are easy to be changed, excuse me.
 
-* currently impossible to nest symbols in `DocumentSymbolProvider`, because `container` arg of `SymbolInformation` does not work...
-
-  * TypeScript Language Service looks to be able to utilize this arg at `WorkspaceSymbolProvider`, so this may be resolved in future: 
-    [workspaceSymbols.ts](https://github.com/Microsoft/vscode/blob/e2cf8ebc5d6e827199124b911ff3e25ff38ae2ec/extensions/typescript-language-features/src/features/workspaceSymbols.ts#L53)
-  * and also, can not resort to `DocumentSymbol`, maybe because ctags does not know `range` as the region of definition on the file
-    ([DocumentSymbol](https://code.visualstudio.com/api/references/vscode-api#DocumentSymbol)).
-
 * need to be activated by command.
   `"workspaceContains:**/.tags"` or so may be better.
 * tags file needs to exists the same directory as target file.
 * do not jump between files.
 * do not rename.
 * do not generate ctags file.
-* (Maybe) do not watch the change of ctags file.
+* do not see the change of ctags file instantly. If re-open the file, changes will be effected.
+* do not watch the change of settings file. If re-open workspace, changes will be effected.
