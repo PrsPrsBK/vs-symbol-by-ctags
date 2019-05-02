@@ -16,7 +16,7 @@ If your tags file is load and your target file has symbols, some changes will ha
 Some items will be appear within `Outline` pane of `Explorer` side-bar,
 and you can search symbols by typing it's name
 via `Control + Shift + o` (or type `@` after `Control + p`)
-(keybinds depends on your settings and physical keyboard. I use japanese keyboard.).
+(keybinds depends on your settings and physical keyboard. I use japanese keyboard on Windows 10.).
 
 
 tags file format
@@ -161,9 +161,3 @@ Maybe all things are easy to be changed, excuse me.
 * do not rename.
 * do not generate ctags file.
 * (Maybe) do not watch the change of ctags file.
-
-Release Notes
-====================
-
-* 2019-04-29 0.2.0 `ends` and `kindMap` settings
-* 2019-04-29 0.3.0 tags file name is one of 'tags', '.tags', 'TAGS'.
