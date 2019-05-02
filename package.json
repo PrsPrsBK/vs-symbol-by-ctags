@@ -45,6 +45,9 @@
                 },
                 "kindMap": {
                   "type": "object"
+                },
+                "sro": {
+                  "type": "string"
                 }
               }
             }

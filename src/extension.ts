@@ -43,6 +43,7 @@ interface SbcTarget {
   glob: string;
   ends: string[];
   kindMap: any;
+  sro: string;
 }
 
 const kind2SymbolKind: any = {
@@ -90,12 +91,14 @@ export class CtagsDocumentSymbolProvider implements vscode.DocumentSymbolProvide
     //'.' means directory of code.exe
     const fileName = document.uri.path.replace(/.*\/([^\/]+)/, '$1');
     const dirName = document.uri.fsPath.replace(fileName, '');
-    const config = this.configArray.find(aConfig => {
+    const config: (SbcTarget | undefined) = this.configArray.find(aConfig => {
       const wk = aConfig.ends.find(nameEnd => { return fileName.endsWith(nameEnd); });
       return wk !== undefined;
     });
-    const result: vscode.SymbolInformation[] = [];
-    return new Promise<vscode.SymbolInformation[]>((resolve, reject) => {
+    // sro: Scope Resolution Operator, '::' in C++, '.' in Java.
+    const sro: string = config !== undefined ? config.sro : '';
+    const result: vscode.DocumentSymbol[] = [];
+    return new Promise<vscode.DocumentSymbol[]>((resolve, reject) => {
       const tagsFileName = tagsFileList.find(f => { return fs.existsSync(`${dirName}/${f}`); });
       if(tagsFileName === undefined) {
         console.error('tags file not found.');
@@ -106,6 +109,7 @@ export class CtagsDocumentSymbolProvider implements vscode.DocumentSymbolProvide
         const rs = fs.createReadStream(`${dirName}/${tagsFileName}`);
         const lines = readline.createInterface(rs);
         lines.on('line', line => {
+          // currently read all lines. if 'not sorted', to stop readline is better.
           const tokens = line.split('\t');
           if(tokens[1] === fileName) {
             const pos = tokens.length > 4
@@ -116,14 +120,17 @@ export class CtagsDocumentSymbolProvider implements vscode.DocumentSymbolProvide
               && kind2SymbolKind[kindMap[tokens[3]]] !== undefined) {
               kind = kind2SymbolKind[kindMap[tokens[3]]];
             }
-            result.push(
-              new vscode.SymbolInformation(
-                tokens[0],
-                kind,
-                '',
-                new vscode.Location(document.uri, new vscode.Position(pos - 1, 0))
-              )
+            if(tokens.length > 5 && tokens[5] !== '' && sro !== '') {
+            }
+            const wk = new vscode.DocumentSymbol(
+              tokens[0],
+              tokens[5],
+              kind,
+              new vscode.Range(pos - 1, 0, pos, 10), // 10 and 'pos' has no meaning
+              new vscode.Range(pos - 1, 0, pos - 1, 10)
             );
+            wk.children = [];
+            result.push(wk);
           }
         });
         lines.on('close', () => {
