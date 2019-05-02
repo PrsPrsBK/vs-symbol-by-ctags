@@ -44,6 +44,7 @@ interface SbcTarget {
   ends: string[];
   kindMap: any;
   sro: string;
+  restartTree: string;
 }
 
 const kind2SymbolKind: any = {
@@ -96,7 +97,11 @@ export class CtagsDocumentSymbolProvider implements vscode.DocumentSymbolProvide
       return wk !== undefined;
     });
     // sro: Scope Resolution Operator, '::' in C++, '.' in Java.
-    const sro: string = config !== undefined ? config.sro : '';
+    const sro: string = (config !== undefined && config.sro !== undefined)
+      ? config.sro : '';
+    // top of tree
+    const restartTree: string = (config !== undefined && config.restartTree !== undefined)
+      ? config.restartTree : '';
     const result: vscode.DocumentSymbol[] = [];
     return new Promise<vscode.DocumentSymbol[]>((resolve, reject) => {
       const tagsFileName = tagsFileList.find(f => { return fs.existsSync(`${dirName}/${f}`); });
@@ -108,6 +113,7 @@ export class CtagsDocumentSymbolProvider implements vscode.DocumentSymbolProvide
         const kindMap = config !== undefined ? config.kindMap : undefined;
         const rs = fs.createReadStream(`${dirName}/${tagsFileName}`);
         const lines = readline.createInterface(rs);
+        let currentTreeTop = '';
 
         lines.on('line', line => {
           // currently read all lines. if 'not sorted by symbolname', to stop readline is better.
@@ -132,9 +138,30 @@ export class CtagsDocumentSymbolProvider implements vscode.DocumentSymbolProvide
               new vscode.Range(pos - 1, 0, pos - 1, 10)
             );
             currentSymbol.children = [];
+
+            if(restartTree !== '') {
+              if(restartTree.includes(tokens[3])) {
+                result.push(currentSymbol);
+                currentTreeTop = symbolName;
+              }
+              else if(currentTreeTop === '') {
+                result.push(currentSymbol);
+              }
+              else {
+                const parent = result.find(docSym => {
+                  return docSym.name === currentTreeTop;
+                });
+                if(parent !== undefined) {
+                  parent.children.push(currentSymbol);
+                }
+                else {
+                  result.push(currentSymbol);
+                }
+              }
+            }
             // case of rst2ctags.py
             // tokens[5] takes form of 'section:foo|bar...'
-            if(tokens.length > 5 && tokens[5] !== '' && sro !== '') {
+            else if(tokens.length > 5 && tokens[5] !== '' && sro !== '') {
               let parent: (vscode.DocumentSymbol | undefined) = undefined;
               for(const ancestor of tokens[5].slice(1 + tokens[5].indexOf(':')).split(sro)) {
                 console.log(`${symbolName}'s ancestor: ${ancestor}`);

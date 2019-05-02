@@ -16,7 +16,8 @@
           "t": "Interface",
           "v": "Variable",
           "y": "Class",
-        }
+        },
+        "restartTree": "acipty"
       }
     ]
   }

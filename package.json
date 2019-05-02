@@ -48,6 +48,9 @@
                 },
                 "sro": {
                   "type": "string"
+                },
+                "restartTree": {
+                  "type": "string"
                 }
               }
             }
