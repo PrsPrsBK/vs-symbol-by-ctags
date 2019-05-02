@@ -108,10 +108,12 @@ export class CtagsDocumentSymbolProvider implements vscode.DocumentSymbolProvide
         const kindMap = config !== undefined ? config.kindMap : undefined;
         const rs = fs.createReadStream(`${dirName}/${tagsFileName}`);
         const lines = readline.createInterface(rs);
+
         lines.on('line', line => {
           // currently read all lines. if 'not sorted', to stop readline is better.
           const tokens = line.split('\t');
           if(tokens[1] === fileName) {
+            const symbolName = tokens[0];
             const pos = tokens.length > 4
               ? parseInt(tokens[4].split(':')[1]) // lines:n
               : parseInt(tokens[2].replace(';"', '')); // nn;"
@@ -120,19 +122,41 @@ export class CtagsDocumentSymbolProvider implements vscode.DocumentSymbolProvide
               && kind2SymbolKind[kindMap[tokens[3]]] !== undefined) {
               kind = kind2SymbolKind[kindMap[tokens[3]]];
             }
-            if(tokens.length > 5 && tokens[5] !== '' && sro !== '') {
-            }
+
             const wk = new vscode.DocumentSymbol(
-              tokens[0],
-              tokens[5],
+              symbolName,
+              '',
               kind,
               new vscode.Range(pos - 1, 0, pos, 10), // 10 and 'pos' has no meaning
               new vscode.Range(pos - 1, 0, pos - 1, 10)
             );
             wk.children = [];
-            result.push(wk);
+            // case of rst2ctags.py
+            if(tokens.length > 5 && tokens[5] !== '' && sro !== '') {
+              let parent: (vscode.DocumentSymbol | undefined);
+              for(const ancestor of tokens[5].split(sro)) {
+                console.log(ancestor);
+                parent = result.find(docSym => {
+                  return docSym.name === ancestor.split(':')[1];
+                });
+                if(parent === undefined) {
+                  break;
+                }
+              }
+              if(parent === undefined) {
+                console.error(`${new Date().toLocaleTimeString} ERROR: ${symbolName}: symbol hierarchy spec within tags file`);
+                result.push(wk);
+              }
+              else {
+                parent.children.push(wk);
+              }
+            }
+            else {
+              result.push(wk);
+            }
           }
         });
+
         lines.on('close', () => {
           rs.destroy();
           resolve(result);
