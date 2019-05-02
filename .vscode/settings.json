@@ -5,8 +5,11 @@
       {
         "name": "reStructuredText(just description)",
         "glob": "**/*.rst",
-        "exec": "command(not yet)",
-        "tags": [ ".tags(not yet)" ]
+        "ends": [ ".rst" ],
+        "kindMap": {
+          "s": "Struct",
+        },
+        "sro": "|"
       }
     ]
   }
