@@ -1,0 +1,15 @@
+{
+  "SymbolByCtags":{
+    "target": [
+      {
+        "name": "reStructuredText(just description)",
+        "glob": "**/*.rst",
+        "ends": [ ".rst" ],
+        "kindMap": {
+          "s": "Struct",
+        },
+        "sro": "|"
+      }
+    ]
+  }
+}
