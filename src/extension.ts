@@ -110,7 +110,7 @@ export class CtagsDocumentSymbolProvider implements vscode.DocumentSymbolProvide
         const lines = readline.createInterface(rs);
 
         lines.on('line', line => {
-          // currently read all lines. if 'not sorted', to stop readline is better.
+          // currently read all lines. if 'not sorted by symbolname', to stop readline is better.
           const tokens = line.split('\t');
           if(tokens[1] === fileName) {
             const symbolName = tokens[0];
@@ -118,25 +118,27 @@ export class CtagsDocumentSymbolProvider implements vscode.DocumentSymbolProvide
               ? parseInt(tokens[4].split(':')[1]) // lines:n
               : parseInt(tokens[2].replace(';"', '')); // nn;"
             let kind = vscode.SymbolKind.Constructor;
-            if(kindMap !== undefined && kindMap[tokens[3]] !== undefined
+            if(kindMap !== undefined
+              && kindMap[tokens[3]] !== undefined
               && kind2SymbolKind[kindMap[tokens[3]]] !== undefined) {
               kind = kind2SymbolKind[kindMap[tokens[3]]];
             }
 
-            const wk = new vscode.DocumentSymbol(
+            const currentSymbol = new vscode.DocumentSymbol(
               symbolName,
               '',
               kind,
               new vscode.Range(pos - 1, 0, pos, 10), // 10 and 'pos' has no meaning
               new vscode.Range(pos - 1, 0, pos - 1, 10)
             );
-            wk.children = [];
+            currentSymbol.children = [];
             // case of rst2ctags.py
+            // tokens[5] takes form of 'section:foo|bar...'
             if(tokens.length > 5 && tokens[5] !== '' && sro !== '') {
               let parent: (vscode.DocumentSymbol | undefined) = undefined;
-              for(const ancestor of tokens[5].slice(8).split(sro)) { // section: ...
+              for(const ancestor of tokens[5].slice(1 + tokens[5].indexOf(':')).split(sro)) {
                 console.log(`${symbolName}'s ancestor: ${ancestor}`);
-                if(parent === undefined) {
+                if(parent === undefined) { // 1st ansector
                   parent = result.find(docSym => {
                     return docSym.name === ancestor;
                   });
@@ -146,20 +148,20 @@ export class CtagsDocumentSymbolProvider implements vscode.DocumentSymbolProvide
                     return docSym.name === ancestor;
                   });
                 }
-                if(parent === undefined) {
+                if(parent === undefined) { // failed one
                   break;
                 }
               }
               if(parent === undefined) {
-                console.error(`${new Date().toLocaleTimeString()} ERROR: ${symbolName}: symbol hierarchy spec within tags file`);
-                result.push(wk);
+                console.error(`${new Date().toLocaleTimeString()} ERROR: ${symbolName}: at symbol hierarchy spec within tags file`);
+                result.push(currentSymbol);
               }
               else {
-                parent.children.push(wk);
+                parent.children.push(currentSymbol);
               }
             }
             else {
-              result.push(wk);
+              result.push(currentSymbol);
             }
           }
         });
