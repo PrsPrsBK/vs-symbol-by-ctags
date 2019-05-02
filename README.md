@@ -62,8 +62,13 @@ and each settings-object has some properties.
 * `ends`: array of string used to match settings with files. [ `.rst` ] or so.
 * `kindMap`: object. Mapping ctag's `kind` (1 length string) to VS Code's `SymbolKind`.
   [reference for SymbolKind](https://code.visualstudio.com/api/references/vscode-api#SymbolKind)
+* `restartTree`: string composed of Type of Symbol(each has 1 length).
+  If the type of symbol is included in this string, 
+  the symbol is top of tree and has symbols that appear after 'top' and before next 'restart', as a child.
+  **That is, you can have only 1 level depth trees**.
 * `sro`: string that is Scope Resolution Operator.
   This works for tags files of extended form, such as one by `rst2ctags.py`.
+  **In this case, you can have greater than 1 level depth trees**.
 
 For workspace following, write to `some.code-workspace` file:
 
@@ -117,7 +122,8 @@ For workspace following, write to `some.code-workspace` file:
             "t": "Interface",
             "p": "Class",
             "y": "Class",
-          }
+          },
+          "restartTree": "acipty"
         }
       ]
     }
