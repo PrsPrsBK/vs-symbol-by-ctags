@@ -62,7 +62,8 @@ and each settings-object has some properties.
 * `ends`: array of string used to match settings with files. [ `.rst` ] or so.
 * `kindMap`: object. Mapping ctag's `kind` (1 length string) to VS Code's `SymbolKind`.
   [reference for SymbolKind](https://code.visualstudio.com/api/references/vscode-api#SymbolKind)
-
+* `sro`: string that is Scope Resolution Operator.
+  This works for tags files of extended form, such as one by `rst2ctags.py`.
 
 For workspace following, write to `some.code-workspace` file:
 
@@ -99,7 +100,8 @@ For workspace following, write to `some.code-workspace` file:
           "ends": [ ".rst" ],
           "kindMap": {
             "s": "Struct",
-          }
+          },
+          "sro": "|"
         },
         {
           "name": "pony",
