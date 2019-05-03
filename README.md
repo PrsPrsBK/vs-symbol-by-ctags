@@ -157,7 +157,6 @@ Maybe all things are easy to be changed, excuse me.
 
 * need to be activated by command.
   `"workspaceContains:**/.tags"` or so may be better.
-* tags file needs to exists the same directory as target file.
 * do not jump between files.
 * do not rename.
 * do not generate ctags file.
