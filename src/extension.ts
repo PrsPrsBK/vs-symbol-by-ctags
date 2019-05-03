@@ -89,9 +89,13 @@ export class CtagsDocumentSymbolProvider implements vscode.DocumentSymbolProvide
     document: vscode.TextDocument,
     _token: vscode.CancellationToken) {
 
+    const wf = vscode.workspace.getWorkspaceFolder(document.uri);
+    if(wf !== undefined) {
+      console.log(`${wf.uri.path}`); // /x:/path/to/folder
+    }
     //'.' means directory of code.exe
     const fileName = document.uri.path.replace(/.*\/([^\/]+)/, '$1');
-    const dirName = document.uri.fsPath.replace(fileName, '');
+    const dirPath = document.uri.path.replace(/(.+)\/[^\/]+$/, '$1').slice(1);
     const config: (SbcTarget | undefined) = this.configArray.find(aConfig => {
       const wk = aConfig.ends.find(nameEnd => { return fileName.endsWith(nameEnd); });
       return wk !== undefined;
@@ -102,23 +106,38 @@ export class CtagsDocumentSymbolProvider implements vscode.DocumentSymbolProvide
     // top of tree
     const restartTree: string = (config !== undefined && config.restartTree !== undefined)
       ? config.restartTree : '';
+
     const result: vscode.DocumentSymbol[] = [];
     return new Promise<vscode.DocumentSymbol[]>((resolve, reject) => {
-      const tagsFileName = tagsFileList.find(f => { return fs.existsSync(`${dirName}/${f}`); });
+      let tagsFileName = tagsFileList.find(f => { return fs.existsSync(`${dirPath}/${f}`); });
+      let tagsDirPath = dirPath;
+      if(tagsFileName === undefined && wf !== undefined) {
+        const wfPath = wf.uri.path.slice(1);
+        while(true) {
+          if(tagsDirPath === wfPath || tagsFileName !== undefined) {
+            break;
+          }
+          tagsDirPath = tagsDirPath.replace(/(.+)\/[^\/]+$/, '$1');
+          console.log(tagsDirPath);
+          tagsFileName = tagsFileList.find(f => { return fs.existsSync(`${tagsDirPath}/${f}`); });
+        }
+      }
       if(tagsFileName === undefined) {
         console.error('tags file not found.');
         reject(result);
       }
       else {
+        // filePath within tags file is 'foo/bar/file'
+        const relativePart = tagsDirPath === dirPath ? '' : `${dirPath.slice(1 + tagsDirPath.length)}/`;
         const kindMap = config !== undefined ? config.kindMap : undefined;
-        const rs = fs.createReadStream(`${dirName}/${tagsFileName}`);
+        const rs = fs.createReadStream(`${tagsDirPath}/${tagsFileName}`);
         const lines = readline.createInterface(rs);
         let currentTreeTop = '';
 
         lines.on('line', line => {
           // currently read all lines. if 'not sorted by symbolname', to stop readline is better.
           const tokens = line.split('\t');
-          if(tokens[1] === fileName) {
+          if(tokens[1] === `${relativePart}${fileName}`) {
             const symbolName = tokens[0];
             const pos = tokens.length > 4
               ? parseInt(tokens[4].split(':')[1]) // lines:n
