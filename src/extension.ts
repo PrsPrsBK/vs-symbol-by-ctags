@@ -11,10 +11,14 @@ export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(activateCommand);
 
   const nextSymbolCommand = vscode.commands.registerCommand('extension.nextSymbol', () => {
-    vscode.window.showInformationMessage('next symbol');
     nextSymbol();
   });
   context.subscriptions.push(nextSymbolCommand);
+
+  const prevSymbolCommand = vscode.commands.registerCommand('extension.prevSymbol', () => {
+    nextSymbol(true);
+  });
+  context.subscriptions.push(prevSymbolCommand);
 
   // later config: SbcConfig or so
   const config = vscode.workspace.getConfiguration('SymbolByCtags');
@@ -86,12 +90,13 @@ const tagsFileList = [ 'tags', '.tags', 'TAGS' ];
 
 let symbolPositions: number[] = [];
 
-const nextSymbol = () => {
+const nextSymbol = (prev = false) => {
   const activeTextEditor = vscode.window.activeTextEditor;
   if(activeTextEditor !== undefined) {
     const currentLine = activeTextEditor.selection.active.line;
-    console.log(`${JSON.stringify(activeTextEditor.selection)}`);
-    const nextLine = symbolPositions.find(nthLine => currentLine < nthLine);
+    const nextLine = prev
+      ? symbolPositions.reverse().find(nthLine => currentLine > nthLine)
+      : symbolPositions.find(nthLine => currentLine < nthLine);
     if(nextLine !== undefined) {
       activeTextEditor.selection = new vscode.Selection(
         nextLine, 0, nextLine, 0
