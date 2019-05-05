@@ -95,9 +95,16 @@ const nextSymbol = (prev = false) => {
   const activeTextEditor = vscode.window.activeTextEditor;
   if(activeTextEditor !== undefined) {
     const currentLine = activeTextEditor.selection.active.line;
-    const nextLine = prev
-      ? symbolPositions.reverse().find(nthLine => currentLine > nthLine)
-      : symbolPositions.find(nthLine => currentLine < nthLine);
+    let nextLine = symbolPositions.find(nthLine => currentLine < nthLine);
+    if(prev) {
+      nextLine = undefined;
+      for(let i = symbolPositions.length - 1;i > -1;i--) {
+        if(symbolPositions[i] < currentLine) {
+          nextLine = symbolPositions[i];
+          break;
+        }
+      }
+    }
     if(nextLine !== undefined) {
       activeTextEditor.selection = new vscode.Selection(
         nextLine, 0, nextLine, 0
