@@ -125,7 +125,7 @@ export class CtagsDocumentSymbolProvider implements vscode.DocumentSymbolProvide
     const fileName = document.uri.path.replace(/.*\/([^\/]+)/, '$1');
     const dirPath = document.uri.path.replace(/(.+)\/[^\/]+$/, '$1').slice(1);
     const config: (SbcTarget | undefined) = this.configArray.find(aConfig => {
-      const wk = aConfig.ends.find(nameEnd => { return fileName.endsWith(nameEnd); });
+      const wk = aConfig.ends.find(nameEnd => fileName.endsWith(nameEnd));
       return wk !== undefined;
     });
     // sro: Scope Resolution Operator, '::' in C++, '.' in Java.
@@ -137,7 +137,7 @@ export class CtagsDocumentSymbolProvider implements vscode.DocumentSymbolProvide
 
     const result: vscode.DocumentSymbol[] = [];
     return new Promise<vscode.DocumentSymbol[]>((resolve, reject) => {
-      let tagsFileName = tagsFileList.find(f => { return fs.existsSync(`${dirPath}/${f}`); });
+      let tagsFileName = tagsFileList.find(f => fs.existsSync(`${dirPath}/${f}`));
       let tagsDirPath = dirPath;
       if(tagsFileName === undefined && wf !== undefined) {
         const wfPath = wf.uri.path.slice(1);
@@ -147,7 +147,7 @@ export class CtagsDocumentSymbolProvider implements vscode.DocumentSymbolProvide
           }
           tagsDirPath = tagsDirPath.replace(/(.+)\/[^\/]+$/, '$1');
           console.log(tagsDirPath);
-          tagsFileName = tagsFileList.find(f => { return fs.existsSync(`${tagsDirPath}/${f}`); });
+          tagsFileName = tagsFileList.find(f => fs.existsSync(`${tagsDirPath}/${f}`));
         }
       }
       if(tagsFileName === undefined) {
