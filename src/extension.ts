@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import fs from 'fs';
 import readline from 'readline';
+import os from 'os';
 
 export function activate(context: vscode.ExtensionContext) {
   console.log('"symbol-by-ctags" is now active!');
@@ -119,11 +120,13 @@ export class CtagsDocumentSymbolProvider implements vscode.DocumentSymbolProvide
     symbolPositions = [];
     const wf = vscode.workspace.getWorkspaceFolder(document.uri);
     if(wf !== undefined) {
-      console.log(`wf: ${wf.uri.path}`); // /x:/path/to/folder
+      console.log(`wf: ${wf.uri.path}`);
     }
+    // On win32, you get path such as /x:/path/to/folder
+    const sliceFrom = os.platform() === 'win32' ? 1 : 0;
     //'.' means directory of code.exe
     const fileName = document.uri.path.replace(/.*\/([^\/]+)/, '$1');
-    const dirPath = document.uri.path.replace(/(.+)\/[^\/]+$/, '$1').slice(1);
+    const dirPath = document.uri.path.replace(/(.+)\/[^\/]+$/, '$1').slice(sliceFrom);
     const config: (SbcTarget | undefined) = this.configArray.find(aConfig => {
       const wk = aConfig.ends.find(nameEnd => fileName.endsWith(nameEnd));
       return wk !== undefined;
@@ -140,13 +143,12 @@ export class CtagsDocumentSymbolProvider implements vscode.DocumentSymbolProvide
       let tagsFileName = tagsFileList.find(f => fs.existsSync(`${dirPath}/${f}`));
       let tagsDirPath = dirPath;
       if(tagsFileName === undefined && wf !== undefined) {
-        const wfPath = wf.uri.path.slice(1);
+        const wfPath = wf.uri.path.slice(sliceFrom);
         while(true) {
           if(tagsDirPath === wfPath || tagsFileName !== undefined) {
             break;
           }
           tagsDirPath = tagsDirPath.replace(/(.+)\/[^\/]+$/, '$1');
-          console.log(tagsDirPath);
           tagsFileName = tagsFileList.find(f => fs.existsSync(`${tagsDirPath}/${f}`));
         }
       }
@@ -156,8 +158,9 @@ export class CtagsDocumentSymbolProvider implements vscode.DocumentSymbolProvide
       }
       else {
         // filePath within tags file is 'foo/bar/file'
-        const relativePart = tagsDirPath === dirPath
-          ? '' : `${dirPath.slice(1 + tagsDirPath.length)}/`;
+        const relativePath = tagsDirPath === dirPath
+          ? fileName
+          : `${dirPath.slice(1 + tagsDirPath.length)}/${fileName}`;
         const kindMap = config !== undefined ? config.kindMap : undefined;
         const rs = fs.createReadStream(`${tagsDirPath}/${tagsFileName}`);
         const lines = readline.createInterface(rs);
@@ -166,7 +169,7 @@ export class CtagsDocumentSymbolProvider implements vscode.DocumentSymbolProvide
         lines.on('line', line => {
           // currently read all lines. if 'not sorted by symbolname', to stop readline is better.
           const tokens = line.split('\t');
-          if(tokens[1] === `${relativePart}${fileName}`) {
+          if(tokens[1] === relativePath) {
             const symbolName = tokens[0];
             const pos = tokens.length > 4
               ? parseInt(tokens[4].split(':')[1]) // lines:n
