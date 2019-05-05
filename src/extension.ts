@@ -10,6 +10,12 @@ export function activate(context: vscode.ExtensionContext) {
   });
   context.subscriptions.push(activateCommand);
 
+  const nextSymbolCommand = vscode.commands.registerCommand('extension.nextSymbol', () => {
+    vscode.window.showInformationMessage('next symbol');
+    nextSymbol();
+  });
+  context.subscriptions.push(nextSymbolCommand);
+
   // later config: SbcConfig or so
   const config = vscode.workspace.getConfiguration('SymbolByCtags');
   const documentFilterArray: vscode.DocumentFilter[] = [];
@@ -78,6 +84,22 @@ const kind2SymbolKind: any = {
 
 const tagsFileList = [ 'tags', '.tags', 'TAGS' ];
 
+let symbolPositions: number[] = [];
+
+const nextSymbol = () => {
+  const activeTextEditor = vscode.window.activeTextEditor;
+  if(activeTextEditor !== undefined) {
+    const currentLine = activeTextEditor.selection.active.line;
+    console.log(`${JSON.stringify(activeTextEditor.selection)}`);
+    const nextLine = symbolPositions.find(nthLine => currentLine < nthLine);
+    if(nextLine !== undefined) {
+      activeTextEditor.selection = new vscode.Selection(
+        nextLine, 0, nextLine, 0
+      );
+    }
+  }
+};
+
 export class CtagsDocumentSymbolProvider implements vscode.DocumentSymbolProvider {
   configArray: Array<SbcTarget>;
 
@@ -89,9 +111,10 @@ export class CtagsDocumentSymbolProvider implements vscode.DocumentSymbolProvide
     document: vscode.TextDocument,
     _token: vscode.CancellationToken) {
 
+    symbolPositions = [];
     const wf = vscode.workspace.getWorkspaceFolder(document.uri);
     if(wf !== undefined) {
-      console.log(`${wf.uri.path}`); // /x:/path/to/folder
+      console.log(`wf: ${wf.uri.path}`); // /x:/path/to/folder
     }
     //'.' means directory of code.exe
     const fileName = document.uri.path.replace(/.*\/([^\/]+)/, '$1');
@@ -128,7 +151,8 @@ export class CtagsDocumentSymbolProvider implements vscode.DocumentSymbolProvide
       }
       else {
         // filePath within tags file is 'foo/bar/file'
-        const relativePart = tagsDirPath === dirPath ? '' : `${dirPath.slice(1 + tagsDirPath.length)}/`;
+        const relativePart = tagsDirPath === dirPath
+          ? '' : `${dirPath.slice(1 + tagsDirPath.length)}/`;
         const kindMap = config !== undefined ? config.kindMap : undefined;
         const rs = fs.createReadStream(`${tagsDirPath}/${tagsFileName}`);
         const lines = readline.createInterface(rs);
@@ -149,6 +173,7 @@ export class CtagsDocumentSymbolProvider implements vscode.DocumentSymbolProvide
               kind = kind2SymbolKind[kindMap[tokens[3]]];
             }
 
+            symbolPositions.push(pos - 1);
             const currentSymbol = new vscode.DocumentSymbol(
               symbolName,
               '',
@@ -183,7 +208,6 @@ export class CtagsDocumentSymbolProvider implements vscode.DocumentSymbolProvide
             else if(tokens.length > 5 && tokens[5] !== '' && sro !== '') {
               let parent: (vscode.DocumentSymbol | undefined) = undefined;
               for(const ancestor of tokens[5].slice(1 + tokens[5].indexOf(':')).split(sro)) {
-                console.log(`${symbolName}'s ancestor: ${ancestor}`);
                 if(parent === undefined) { // 1st ansector
                   parent = result.find(docSym => {
                     return docSym.name === ancestor;

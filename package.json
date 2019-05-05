@@ -23,6 +23,10 @@
       {
         "command": "extension.symbolByCtags",
         "title": "Symbol by Ctags"
+      },
+      {
+        "command": "extension.nextSymbol",
+        "title": "Go to Next Symbol by Ctags"
       }
     ],
     "configuration": {
