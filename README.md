@@ -2,7 +2,9 @@ Anyway I want symbols.
 
 Sometimes there is no language support like FooLang-mode or language server,
 such that works well with symbols (jump between them or so).
-But you want to edit files right now -- in my case, reStructuredText and Pony files.
+But you want to edit files right now -- in my case,
+[reStructuredText](http://docutils.sourceforge.net/rst.html)
+and [PonyLang](https://www.ponylang.io/) files.
 So let's rely on ctags' power.
 
 
