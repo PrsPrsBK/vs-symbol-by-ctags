@@ -189,12 +189,15 @@ export class CtagsDocumentSymbolProvider implements vscode.DocumentSymbolProvide
             }
 
             symbolPositions.push(pos - 1);
+            const posCol = tokens[2].startsWith('/') // /^  foo$/;"
+              ? tokens[2].slice(2, tokens[2].length - 4).indexOf(symbolName)
+              : 0;
             const currentSymbol = new vscode.DocumentSymbol(
               symbolName,
               '',
               kind,
               new vscode.Range(pos - 1, 0, pos, 10), // 10 and 'pos' has no meaning
-              new vscode.Range(pos - 1, 0, pos - 1, 10)
+              new vscode.Range(pos - 1, posCol, pos - 1, posCol + symbolName.length)
             );
             currentSymbol.children = [];
 
