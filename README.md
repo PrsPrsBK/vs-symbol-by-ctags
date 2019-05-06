@@ -87,9 +87,16 @@ and each settings-object has some properties.
   If the type of symbol is included in this string, 
   the symbol is top of tree and has symbols that appear after 'top' and before next 'restart', as a child.
   **That is, you can have only 1 level depth trees**.
-* `sro`: string that is Scope Resolution Operator (borrowed from Vim's great Tagbar).
+* `sro`: string that is Scope Resolution Operator (borrowed from Vim's great [Tagbar](https://github.com/majutsushi/tagbar) by majutsushi).
   This works for tags files of extended form, such as one by `rst2ctags.py`.
   **In this case, you can have greater than 1 level depth trees**.
+* `offSideRule` (experimental): boolean, and do not work with `restartTree`.
+  For languages of off-side rule (Pony, F#, Python, ...),
+  symbol tree have nested structure corresponding to indent level.
+  I felt that elaborating this will not have so nice effects,
+  because apparently we can not cover so much pattern of code-structure.
+  But we may get more accurate range of each definition and utilize that for other feature,
+  so this experiment happened.
 
 For workspace following, write to `some.code-workspace` file:
 
@@ -145,6 +152,7 @@ For workspace following, write to `some.code-workspace` file:
             "y": "Class",
           },
           "restartTree": "acipty"
+          // or "offSideRule": true
         }
       ]
     }
