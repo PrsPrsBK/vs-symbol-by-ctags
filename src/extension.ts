@@ -176,7 +176,7 @@ export class CtagsDocumentSymbolProvider implements vscode.DocumentSymbolProvide
         const rs = fs.createReadStream(`${tagsDirPath}/${tagsFileName}`);
         const lines = readline.createInterface(rs);
         let currentTreeTop = '';
-        const parentArray: any[] = [];
+        let parentArray: [string, number][] = [];
 
         lines.on('line', line => {
           // currently read all lines. if 'not sorted by symbolname', to stop readline is better.
@@ -185,9 +185,6 @@ export class CtagsDocumentSymbolProvider implements vscode.DocumentSymbolProvide
           const fileNameInTokens = tokens[1].replace('\\', '/');
           if(fileNameInTokens === relativePath) {
             const symbolName = tokens[0];
-            const pos = tokens.length > 4
-              ? parseInt(tokens[4].split(':')[1]) // lines:n
-              : parseInt(tokens[2].replace(';"', '')); // nn;"
             let kind = vscode.SymbolKind.Constructor;
             if(kindMap !== undefined
               && kindMap[tokens[3]] !== undefined
@@ -195,6 +192,9 @@ export class CtagsDocumentSymbolProvider implements vscode.DocumentSymbolProvide
               kind = kind2SymbolKind[kindMap[tokens[3]]];
             }
 
+            const pos = tokens.length > 4
+              ? parseInt(tokens[4].split(':')[1]) // lines:n
+              : parseInt(tokens[2].replace(';"', '')); // nn;"
             const innerRegex = tokens[2].startsWith('/') // /^  foo$/;"
               ? tokens[2].slice(2, tokens[2].length - 4)
               : '';
@@ -213,15 +213,46 @@ export class CtagsDocumentSymbolProvider implements vscode.DocumentSymbolProvide
             );
             currentSymbol.children = [];
 
-            const indentRegex = /^ +/;
+            const indentRegex = /^[ ]+/g;
             if(offSideRule && innerRegex !== '') {
               const curIndent = indentRegex.exec(innerRegex) !== null
                 ? indentRegex.lastIndex : 0;
-              if(parentArray.length === 0) {
-                result.push(currentSymbol);
-                parentArray.push([ symbolName, curIndent]);
+              while(true) {
+                if(parentArray.length === 0) {
+                  result.push(currentSymbol);
+                  parentArray.push([ symbolName, curIndent ]);
+                  break;
+                }
+                const last = parentArray[parentArray.length - 1];
+                let parent: (vscode.DocumentSymbol | undefined) = undefined;
+                for(const ancestor of parentArray) {
+                  if(parent === undefined) { // 1st ansector
+                    parent = result.find(docSym => docSym.name === ancestor[0]);
+                  }
+                  else {
+                    parent = parent.children.find(docSym => docSym.name === ancestor[0]);
+                  }
+                  if(parent === undefined) { // failed one
+                    break;
+                  }
+                }
+                if(parent === undefined) {
+                  console.error(`${new Date().toLocaleTimeString()} ERROR: ${symbolName}: at symbol hierarchy spec within tags file`);
+                  result.push(currentSymbol);
+                  // when failed to get parent symbol obj, there may be better way to go,
+                  // but I do not know now.
+                  parentArray = [];
+                }
+                else if(last[1] < curIndent) {
+                  parent.children.push(currentSymbol);
+                  parentArray.push([ symbolName, curIndent ]);
+                  break;
+                }
+                else {
+                  parent.range = parent.range.with({end: new vscode.Position(pos - 1, 0)});
+                  parentArray.pop();
+                }
               }
-              // maybe we can not modify the last symbol tree...
             }
             else if(restartTree !== '') {
               if(restartTree.includes(tokens[3])) {
@@ -277,6 +308,34 @@ export class CtagsDocumentSymbolProvider implements vscode.DocumentSymbolProvide
         });
 
         lines.on('close', () => {
+          if(offSideRule && parentArray.length > 0) {
+            while(true) {
+              if(parentArray.length === 0) {
+                break;
+              }
+              const last = parentArray[parentArray.length - 1];
+              let parent: (vscode.DocumentSymbol | undefined) = undefined;
+              for(const ancestor of parentArray) {
+                if(parent === undefined) { // 1st ansector
+                  parent = result.find(docSym => docSym.name === ancestor[0]);
+                }
+                else {
+                  parent = parent.children.find(docSym => docSym.name === ancestor[0]);
+                }
+                if(parent === undefined) { // failed one
+                  break;
+                }
+              }
+              if(parent === undefined) {
+                console.error(`${new Date().toLocaleTimeString()} ERROR: ${last[0]}: at symbol hierarchy spec within tags file`);
+                parentArray = [];
+              }
+              else {
+                parent.range = parent.range.with({end: new vscode.Position(document.lineCount - 1, 0)});
+                parentArray.pop();
+              }
+            }
+          }
           rs.destroy();
           resolve(result);
         });
