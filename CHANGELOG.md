@@ -6,6 +6,8 @@
 * new Command: `nextSymbol`, `prevSymbol`
 * fix: tags file path for no-Win32.
 
+* 2019-05-06 0.7.1 fix: document
+
 
 # Release Notes
 
