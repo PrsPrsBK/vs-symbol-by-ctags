@@ -60,6 +60,9 @@
                 },
                 "restartTree": {
                   "type": "string"
+                },
+                "offSideRule": {
+                  "type": "boolean"
                 }
               }
             }

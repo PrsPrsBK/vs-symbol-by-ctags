@@ -56,6 +56,7 @@ interface SbcTarget {
   kindMap: any;
   sro: string;
   restartTree: string;
+  offSideRule: boolean;
 }
 
 const kind2SymbolKind: any = {
@@ -145,6 +146,8 @@ export class CtagsDocumentSymbolProvider implements vscode.DocumentSymbolProvide
     // top of tree
     const restartTree: string = (config !== undefined && config.restartTree !== undefined)
       ? config.restartTree : '';
+    const offSideRule: boolean = (config !== undefined && config.offSideRule !== undefined)
+      ? config.offSideRule : false;
 
     const result: vscode.DocumentSymbol[] = [];
     return new Promise<vscode.DocumentSymbol[]>((resolve, reject) => {
@@ -173,6 +176,7 @@ export class CtagsDocumentSymbolProvider implements vscode.DocumentSymbolProvide
         const rs = fs.createReadStream(`${tagsDirPath}/${tagsFileName}`);
         const lines = readline.createInterface(rs);
         let currentTreeTop = '';
+        const parentArray: any[] = [];
 
         lines.on('line', line => {
           // currently read all lines. if 'not sorted by symbolname', to stop readline is better.
@@ -191,8 +195,11 @@ export class CtagsDocumentSymbolProvider implements vscode.DocumentSymbolProvide
               kind = kind2SymbolKind[kindMap[tokens[3]]];
             }
 
-            const posCol = tokens[2].startsWith('/') // /^  foo$/;"
-              ? tokens[2].slice(2, tokens[2].length - 4).indexOf(symbolName)
+            const innerRegex = tokens[2].startsWith('/') // /^  foo$/;"
+              ? tokens[2].slice(2, tokens[2].length - 4)
+              : '';
+            const posCol = tokens[2].startsWith('/')
+              ? innerRegex.indexOf(symbolName)
               : 0;
             const nextSymbolRange = new vscode.Range(pos - 1, posCol, pos - 1, posCol + symbolName.length);
             symbolRanges.push(nextSymbolRange);
@@ -206,7 +213,17 @@ export class CtagsDocumentSymbolProvider implements vscode.DocumentSymbolProvide
             );
             currentSymbol.children = [];
 
-            if(restartTree !== '') {
+            const indentRegex = /^ +/;
+            if(offSideRule && innerRegex !== '') {
+              const curIndent = indentRegex.exec(innerRegex) !== null
+                ? indentRegex.lastIndex : 0;
+              if(parentArray.length === 0) {
+                result.push(currentSymbol);
+                parentArray.push([ symbolName, curIndent]);
+              }
+              // maybe we can not modify the last symbol tree...
+            }
+            else if(restartTree !== '') {
               if(restartTree.includes(tokens[3])) {
                 result.push(currentSymbol);
                 currentTreeTop = symbolName;
