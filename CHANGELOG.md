@@ -11,6 +11,9 @@
   only when **extended form of tags file**.
 * but scroll does not happen.
 
+* 2019-05-07 0.8.3
+* fix: On `next/prevSymbol` command, scroll does not happen.
+
 
 # Release Notes
 
