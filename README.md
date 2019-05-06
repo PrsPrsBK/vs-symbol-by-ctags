@@ -179,8 +179,8 @@ TODO
 * Caching informations of 'doc and its symbols'.
 * After above things done.
 
-  * Reference Provider
-  * Rename Provider
+  * ~~Reference Provider~~ maybe impossible.
+  * ~~Rename Provider~~ maybe impossible or not worth implementing (you can resort to `Ctrl+H` and confirm one by one).
 
 
 Known Issues
