@@ -1,3 +1,12 @@
+# Latest
+
+## 0.7.0
+
+* 2019-05-06 0.7.0
+* new Command: `nextSymbol`, `prevSymbol`
+* fix: tags file path for no-Win32.
+
+
 # Release Notes
 
 ## 0.2.0
@@ -20,7 +29,7 @@
 And you can get such a tags file by following command:
 
 ```console
-PowerShell$ python d:/bin/rst2ctags.py -f .tags --sort=no docFoo.rst docBar.rst sub/subdoc.rst`
+PowerShell$ python d:/bin/rst2ctags.py -f .tags --sort=no docFoo.rst docBar.rst sub/subdoc.rst
 ```
 
 ## 0.5.0
@@ -32,10 +41,4 @@ PowerShell$ python d:/bin/rst2ctags.py -f .tags --sort=no docFoo.rst docBar.rst 
 
 * 2019-05-03 0.6.0 tags file now do not need to exists at the same directory as target file.
   Detection is done by traversing to workspace folder.
-
-## 0.7.0
-
-* 2019-05-06 0.7.0
-* new Command: `nextSymbol`, `prevSymbol`
-* fix: tags file path for no-Win32.
 
