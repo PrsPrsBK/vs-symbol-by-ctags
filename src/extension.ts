@@ -177,7 +177,9 @@ export class CtagsDocumentSymbolProvider implements vscode.DocumentSymbolProvide
         lines.on('line', line => {
           // currently read all lines. if 'not sorted by symbolname', to stop readline is better.
           const tokens = line.split('\t');
-          if(tokens[1] === relativePath) {
+          // On Windows, spec within tags file may have paths separated by backslash.
+          const fileNameInTokens = tokens[1].replace('\\', '/');
+          if(fileNameInTokens === relativePath) {
             const symbolName = tokens[0];
             const pos = tokens.length > 4
               ? parseInt(tokens[4].split(':')[1]) // lines:n
