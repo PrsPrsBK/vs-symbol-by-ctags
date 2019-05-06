@@ -55,7 +55,7 @@ apply	main.pony	17;"	f
 
 ```console
 # this is another output format of Exuberant Ctags.
-# for example, `ctags -f .tags_fields --sort=no --fields=nksaSmtf *`
+# for example, `ctags -f tags --sort=no --fields=nksaSmtf *`
 # Symbol Name \t File Name \t regex;" \t Type of Symbol(1 length) \t line:LineNumber \t something...
 WordHandler	main.pony	/^class WordHandler is ReadlineNotify$/;"	c	line:8
 apply	main.pony	/^  fun ref apply(line: String, prompt: Promise[String]) =>$/;"	f	line:17
