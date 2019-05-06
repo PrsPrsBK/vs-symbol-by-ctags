@@ -109,6 +109,7 @@ const nextSymbol = (prev = false) => {
       activeTextEditor.selection = new vscode.Selection(
         nextSymbolRange.start, nextSymbolRange.start
       );
+      activeTextEditor.revealRange(nextSymbolRange);
     }
   }
 };
