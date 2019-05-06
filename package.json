@@ -72,7 +72,12 @@
   "engines": {
     "vscode": "^1.33.0"
   },
-  "keywords": [ "symbol", "ctags", "outline" ],
+  "keywords": [
+    "symbol",
+    "ctags",
+    "outline",
+    "reStructuredText"
+  ],
   "scripts": {
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./"
