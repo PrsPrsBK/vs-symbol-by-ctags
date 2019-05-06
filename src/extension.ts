@@ -89,25 +89,25 @@ const kind2SymbolKind: any = {
 
 const tagsFileList = [ 'tags', '.tags', 'TAGS' ];
 
-let symbolPositions: number[] = [];
+let symbolRanges: vscode.Range[] = [];
 
 const nextSymbol = (prev = false) => {
   const activeTextEditor = vscode.window.activeTextEditor;
   if(activeTextEditor !== undefined) {
-    const currentLine = activeTextEditor.selection.active.line;
-    let nextLine = symbolPositions.find(nthLine => currentLine < nthLine);
+    const curPos = activeTextEditor.selection.active;
+    let nextSymbolRange = symbolRanges.find(nthSymbol => curPos.isBefore(nthSymbol.start));
     if(prev) {
-      nextLine = undefined;
-      for(let i = symbolPositions.length - 1;i > -1;i--) {
-        if(symbolPositions[i] < currentLine) {
-          nextLine = symbolPositions[i];
+      nextSymbolRange = undefined;
+      for(let i = symbolRanges.length - 1;i > -1;i--) {
+        if(curPos.isAfter(symbolRanges[i].end)) {
+          nextSymbolRange = symbolRanges[i];
           break;
         }
       }
     }
-    if(nextLine !== undefined) {
+    if(nextSymbolRange !== undefined) {
       activeTextEditor.selection = new vscode.Selection(
-        nextLine, 0, nextLine, 0
+        nextSymbolRange.start, nextSymbolRange.start
       );
     }
   }
@@ -124,7 +124,7 @@ export class CtagsDocumentSymbolProvider implements vscode.DocumentSymbolProvide
     document: vscode.TextDocument,
     _token: vscode.CancellationToken) {
 
-    symbolPositions = [];
+    symbolRanges = [];
     const wf = vscode.workspace.getWorkspaceFolder(document.uri);
     if(wf !== undefined) {
       console.log(`wf: ${wf.uri.path}`);
@@ -188,16 +188,18 @@ export class CtagsDocumentSymbolProvider implements vscode.DocumentSymbolProvide
               kind = kind2SymbolKind[kindMap[tokens[3]]];
             }
 
-            symbolPositions.push(pos - 1);
             const posCol = tokens[2].startsWith('/') // /^  foo$/;"
               ? tokens[2].slice(2, tokens[2].length - 4).indexOf(symbolName)
               : 0;
+            const nextSymbolRange = new vscode.Range(pos - 1, posCol, pos - 1, posCol + symbolName.length);
+            symbolRanges.push(nextSymbolRange);
+
             const currentSymbol = new vscode.DocumentSymbol(
               symbolName,
               '',
               kind,
               new vscode.Range(pos - 1, 0, pos, 10), // 10 and 'pos' has no meaning
-              new vscode.Range(pos - 1, posCol, pos - 1, posCol + symbolName.length)
+              nextSymbolRange
             );
             currentSymbol.children = [];
 
