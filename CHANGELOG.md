@@ -11,6 +11,10 @@
 
 # Release Notes
 
+## 0.1.0
+
+* 2019-04-22 0.1.0 show symbols within 'Outline' pane.
+
 ## 0.2.0
 
 * 2019-04-29 0.2.0 `ends` and `kindMap` settings
