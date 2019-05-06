@@ -170,6 +170,19 @@ In the case that you use 'Open as folder', write to `someFolder/.vscode/settings
 }
 ```
 
+
+TODO
+====================
+
+* More accurate symbol name and position. Maybe we need extended tags file.
+* Separate getting and storing informations of 'doc and its tags file'.
+* Caching informations of 'doc and its symbols'.
+* After above things done.
+
+  * Reference Provider
+  * Rename Provider
+
+
 Known Issues
 ====================
 
