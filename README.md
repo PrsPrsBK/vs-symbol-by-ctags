@@ -21,6 +21,25 @@ via `Control + Shift + o` (or type `@` after `Control + p`)
 (keybinds depends on your settings and physical keyboard. I use japanese keyboard on Windows 10.).
 
 
+command
+====================
+
+Two commands are provided.
+
+```keybindings.json
+  {
+    "key": "ctrl+shift+j",
+    "command": "extension.nextSymbol",
+    "when": "editorTextFocus"
+  },
+  {
+    "key": "ctrl+shift+k",
+    "command": "extension.prevSymbol",
+    "when": "editorTextFocus"
+  }
+```
+
+
 tags file format
 ====================
 
