@@ -26,6 +26,19 @@
       "outFiles": [
         "${workspaceFolder}/out/*.js"
       ]
+    },
+    {
+      "name": "Sym-By-C03",
+      "type": "extensionHost",
+      "request": "launch",
+      "runtimeExecutable": "${execPath}",
+      "args": [
+        "--folder-uri=${workspaceFolder}/test_tree3",
+        "--extensionDevelopmentPath=${workspaceFolder}"
+      ],
+      "outFiles": [
+        "${workspaceFolder}/out/*.js"
+      ]
     }
   ]
 }

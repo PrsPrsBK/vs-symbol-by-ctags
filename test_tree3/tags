@@ -1,0 +1,42 @@
+!_TAG_FILE_FORMAT	2	/extended format; --format=1 will not append ;" to lines/
+!_TAG_FILE_SORTED	0	/0=unsorted, 1=sorted, 2=foldcase/
+!_TAG_PROGRAM_AUTHOR	Darren Hiebert	/dhiebert@users.sourceforge.net/
+!_TAG_PROGRAM_NAME	Exuberant Ctags	//
+!_TAG_PROGRAM_URL	http://ctags.sourceforge.net	/official site/
+!_TAG_PROGRAM_JP_AUTHOR	HIGASHI Hirohito	/Twitter: @h_east/
+!_TAG_PROGRAM_JP_URL	http://hp.vector.co.jp/authors/VA025040/	//
+!_TAG_PROGRAM_VERSION	5.8J2	//
+!_TAG_FILE_ENCODING	cp932	//
+WordHandler	main.pony	/^class WordHandler is ReadlineNotify$/;"	c	line:8
+_commands	main.pony	/^  let _commands: Array[String] = _commands.create()$/;"	v	line:9
+_i	main.pony	/^  var _i: U64 = 0$/;"	v	line:10
+create	main.pony	/^  new iso create() =>$/;"	n	line:12
+apply	main.pony	/^  fun ref apply(line: String, prompt: Promise[String]) =>$/;"	f	line:17
+_update_commands	main.pony	/^  fun ref _update_commands(line: String) =>$/;"	f	line:26
+tab	main.pony	/^  fun ref tab(line: String): Seq[String] box =>$/;"	f	line:35
+r	main.pony	/^    let r = Array[String]$/;"	v	line:36
+CollatzHandler	main.pony	/^class CollatzHandler is ReadlineNotify$/;"	c	line:46
+_i	main.pony	/^  var _i: U64 = 0$/;"	v	line:47
+apply	main.pony	/^  fun ref apply(line: String, prompt: Promise[String]) =>$/;"	f	line:48
+result	main.pony	/^      var result = line + " "$/;"	v	line:52
+iterator	main.pony	/^        let iterator = CollatzIterator[U64](line.u64()?)$/;"	v	line:54
+Rot13Handler	main.pony	/^class Rot13Handler is ReadlineNotify$/;"	c	line:65
+_i	main.pony	/^  var _i: U64 = 0$/;"	v	line:66
+apply	main.pony	/^  fun ref apply(line: String, prompt: Promise[String]) =>$/;"	f	line:67
+result	main.pony	/^      var result = Rot13.convert(line) + " "$/;"	v	line:71
+RatioHandler	main.pony	/^class RatioHandler is ReadlineNotify$/;"	c	line:76
+_i	main.pony	/^  var _i: U64 = 0$/;"	v	line:77
+apply	main.pony	/^  fun ref apply(line: String, prompt: Promise[String]) =>$/;"	f	line:78
+result	main.pony	/^        var result = SternBrocot.get_ratio(line.f64()?).string() + " "$/;"	v	line:83
+Repl	main.pony	/^actor Repl$/;"	a	line:91
+create	main.pony	/^  new create(env: Env, handler: ReadlineNotify iso) =>$/;"	n	line:92
+term	main.pony	/^    let term = ANSITerm(Readline(consume handler, env.out), env.input)$/;"	v	line:96
+notify	main.pony	/^    let notify = object iso$/;"	v	line:99
+term	main.pony	/^      let term: ANSITerm = term$/;"	v	line:100
+apply	main.pony	/^      fun ref apply(data: Array[U8] iso) => term(consume data)$/;"	f	line:101
+dispose	main.pony	/^      fun ref dispose() => term.dispose()$/;"	f	line:102
+Main	main.pony	/^actor Main$/;"	a	line:107
+env	main.pony	/^  let env: Env$/;"	v	line:108
+create	main.pony	/^  new create(env': Env) =>$/;"	n	line:109
+_print_usage	main.pony	/^  fun _print_usage() =>$/;"	f	line:113
+command	main.pony	/^  fun command(task: String, rest: Array[String] box) =>$/;"	f	line:129

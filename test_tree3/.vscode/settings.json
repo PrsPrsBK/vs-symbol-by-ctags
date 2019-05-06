@@ -1,0 +1,24 @@
+{
+  "SymbolByCtags":{
+    "target": [
+      {
+        "name": "pony",
+        "glob": "**/*.pony",
+        "ends": [ ".pony" ],
+        "kindMap": {
+          "a": "Class",
+          "b": "Function",
+          "c": "Class",
+          "f": "Function",
+          "i": "Interface",
+          "n": "Constructor",
+          "p": "Class",
+          "t": "Interface",
+          "v": "Variable",
+          "y": "Class",
+        },
+        "restartTree": "acipty"
+      }
+    ]
+  }
+}
