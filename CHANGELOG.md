@@ -6,6 +6,11 @@
 * More accurate symbol name and position, only when **extended form of tags file**.
   Now you can jump to the head of symbol when you use `Ctrl+Shift+o`.
 
+* 2019-05-07 0.8.2
+* On `next/prevSymbol` command, cursor moves to the head of symbol,
+  only when **extended form of tags file**.
+* but scroll does not happen.
+
 
 # Release Notes
 

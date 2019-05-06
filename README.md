@@ -189,6 +189,7 @@ Known Issues
 In short, the capability is limited very much, and under dogfooding.
 Maybe all things are easy to be changed, excuse me.
 
+* On `next/prevSymbol` command, cursor moves but scroll does not happen.
 * need to be activated by command.
   `"workspaceContains:**/.tags"` or so may be better.
 * do not jump between files.
