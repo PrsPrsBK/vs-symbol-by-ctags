@@ -14,6 +14,9 @@
 * 2019-05-07 0.8.3
 * fix: On `next/prevSymbol` command, scroll does not happen.
 
+* 2019-05-07 0.8.4
+* fix: On Windows, spec within tags file may have paths separated by backslash.
+
 
 # Release Notes
 
