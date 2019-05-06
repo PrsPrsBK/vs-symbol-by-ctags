@@ -2,6 +2,7 @@
 src/
 test_tree/
 test_tree2/
+test_tree3/
 .gitignore
 tsconfig.json
 *.zip
