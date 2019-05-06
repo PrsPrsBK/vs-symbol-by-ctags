@@ -1,21 +1,8 @@
 # Latest
 
-## 0.8.0
+## 0.9.0
 
-* 2019-05-06 0.8.0
-* More accurate symbol name and position, only when **extended form of tags file**.
-  Now you can jump to the head of symbol when you use `Ctrl+Shift+o`.
-
-* 2019-05-07 0.8.2
-* On `next/prevSymbol` command, cursor moves to the head of symbol,
-  only when **extended form of tags file**.
-* but scroll does not happen.
-
-* 2019-05-07 0.8.3
-* fix: On `next/prevSymbol` command, scroll does not happen.
-
-* 2019-05-07 0.8.4
-* fix: On Windows, spec within tags file may have paths separated by backslash.
+* 2019-05-07 0.9.0 experimental `offSideRule` setting
 
 
 # Release Notes
@@ -65,3 +52,19 @@ PowerShell$ python d:/bin/rst2ctags.py -f .tags --sort=no docFoo.rst docBar.rst 
 
 * 2019-05-06 0.7.1 fix: document
 
+## 0.8.0
+
+* 2019-05-06 0.8.0
+* More accurate symbol name and position, only when **extended form of tags file**.
+  Now you can jump to the head of symbol when you use `Ctrl+Shift+o`.
+
+* 2019-05-07 0.8.2
+* On `next/prevSymbol` command, cursor moves to the head of symbol,
+  only when **extended form of tags file**.
+* but scroll does not happen.
+
+* 2019-05-07 0.8.3
+* fix: On `next/prevSymbol` command, scroll does not happen.
+
+* 2019-05-07 0.8.4
+* fix: On Windows, spec within tags file may have paths separated by backslash.
