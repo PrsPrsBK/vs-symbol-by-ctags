@@ -108,6 +108,18 @@ export class CtagsDocumentSymbolProvider implements vscode.DocumentSymbolProvide
 };
 
 const nextSymbol = (textEditor: vscode.TextEditor, prev = false) => {
+  const docSymArray = docSymbolMap.get(textEditor.document.uri);
+  if(docSymArray === undefined) {
+    buildDocumentSymbols(textEditor.document).then(result => {
+      nextSymbolSub(textEditor, prev, result);
+    });
+  }
+  else {
+    nextSymbolSub(textEditor, prev, docSymArray);
+  }
+};
+
+const nextSymbolSub = (textEditor: vscode.TextEditor, prev: boolean, docSymArray: vscode.DocumentSymbol[]) => {
   const cursorPos = textEditor.selection.active;
   let nextSymbolRange = symbolRanges.find(nthSymbol => cursorPos.isBefore(nthSymbol.start));
   if(prev) {
