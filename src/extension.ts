@@ -119,15 +119,6 @@ export class CtagsWorkspaceSymbolProvider implements vscode.WorkspaceSymbolProvi
   ): vscode.SymbolInformation[] {
     return wsSymbolArray.filter(si => si.name.includes(query));
   }
-
-  // public resolveWorkspaceSymbol(
-  //   symbol: vscode.SymbolInformation, _token: vscode.CancellationToken
-  // ): Promise<vscode.SymbolInformation> {
-  //   const result: vscode.SymbolInformation;
-  //   return new Promise((resolve, reject) => {
-  //     resolve(result);
-  //   });
-  // }
 }
 
 const nextSymbol = (textEditor: vscode.TextEditor, prev = false) => {
