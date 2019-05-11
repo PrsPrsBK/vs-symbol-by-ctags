@@ -23,7 +23,6 @@ export function activate(context: vscode.ExtensionContext) {
   });
   context.subscriptions.push(prevSymbolCommand);
 
-  // later config: SbcConfig or so
   const config = vscode.workspace.getConfiguration('SymbolByCtags');
   const documentFilterArray: vscode.DocumentFilter[] = [];
   const targetArray = config.get<SbcTarget[]>('target');
@@ -46,10 +45,6 @@ export function activate(context: vscode.ExtensionContext) {
 }
 
 export function deactivate() { }
-
-interface SbcConfig extends vscode.WorkspaceConfiguration {
-  target: SbcTarget[];
-}
 
 interface SbcTarget {
   name: string;
