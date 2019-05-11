@@ -11,13 +11,15 @@ export function activate(context: vscode.ExtensionContext) {
   });
   context.subscriptions.push(activateCommand);
 
-  const nextSymbolCommand = vscode.commands.registerCommand('extension.nextSymbol', () => {
-    nextSymbol();
+  const nextSymbolCommand = vscode.commands.registerTextEditorCommand(
+    'extension.nextSymbol', (textEditor) => {
+    nextSymbol(textEditor);
   });
   context.subscriptions.push(nextSymbolCommand);
 
-  const prevSymbolCommand = vscode.commands.registerCommand('extension.prevSymbol', () => {
-    nextSymbol(true);
+  const prevSymbolCommand = vscode.commands.registerTextEditorCommand(
+    'extension.prevSymbol', (textEditor) => {
+    nextSymbol(textEditor, true);
   });
   context.subscriptions.push(prevSymbolCommand);
 
@@ -92,26 +94,23 @@ const tagsFileList = [ 'tags', '.tags', 'TAGS' ];
 
 let symbolRanges: vscode.Range[] = [];
 
-const nextSymbol = (prev = false) => {
-  const activeTextEditor = vscode.window.activeTextEditor;
-  if(activeTextEditor !== undefined) {
-    const curPos = activeTextEditor.selection.active;
-    let nextSymbolRange = symbolRanges.find(nthSymbol => curPos.isBefore(nthSymbol.start));
-    if(prev) {
-      nextSymbolRange = undefined;
-      for(let i = symbolRanges.length - 1;i > -1;i--) {
-        if(curPos.isAfter(symbolRanges[i].end)) {
-          nextSymbolRange = symbolRanges[i];
-          break;
-        }
+const nextSymbol = (textEditor: vscode.TextEditor, prev = false) => {
+  const curPos = textEditor.selection.active;
+  let nextSymbolRange = symbolRanges.find(nthSymbol => curPos.isBefore(nthSymbol.start));
+  if(prev) {
+    nextSymbolRange = undefined;
+    for(let i = symbolRanges.length - 1;i > -1;i--) {
+      if(curPos.isAfter(symbolRanges[i].end)) {
+        nextSymbolRange = symbolRanges[i];
+        break;
       }
     }
-    if(nextSymbolRange !== undefined) {
-      activeTextEditor.selection = new vscode.Selection(
-        nextSymbolRange.start, nextSymbolRange.start
-      );
-      activeTextEditor.revealRange(nextSymbolRange);
-    }
+  }
+  if(nextSymbolRange !== undefined) {
+    textEditor.selection = new vscode.Selection(
+      nextSymbolRange.start, nextSymbolRange.start
+    );
+    textEditor.revealRange(nextSymbolRange);
   }
 };
 
