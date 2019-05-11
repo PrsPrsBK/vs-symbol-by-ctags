@@ -20,6 +20,8 @@ and you can search symbols by typing it's name
 via `Control + Shift + o` (or type `@` after `Control + p`)
 (keybinds depends on your settings and physical keyboard. I use japanese keyboard on Windows 10.).
 
+Since 0.10.0, you can workspace-wide symbol search via `Control + t` (case-sensitive and rough).
+
 
 command
 ====================
@@ -182,7 +184,6 @@ In the case that you use 'Open as folder', write to `someFolder/.vscode/settings
 TODO
 ====================
 
-* More accurate symbol name and position. Maybe we need extended tags file.
 * Separate getting and storing informations of 'doc and its tags file'.
 * Caching informations of 'doc and its symbols'.
 * After above things done.
@@ -197,9 +198,9 @@ Known Issues
 In short, the capability is limited very much, and under dogfooding.
 Maybe all things are easy to be changed, excuse me.
 
-* need to be activated by command.
+* need to be activated by command, intended not to bother other extensions.
   `"workspaceContains:**/.tags"` or so may be better.
-* do not jump between files.
+* do not jump between files like a `go to definition`, other than `Ctrl+t`.
 * do not rename.
 * do not generate ctags file.
 * do not see the change of ctags file instantly. If re-open the file, changes will be effected.
