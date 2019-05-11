@@ -41,6 +41,11 @@ export function activate(context: vscode.ExtensionContext) {
           new CtagsDocumentSymbolProvider()
         )
       );
+      context.subscriptions.push(
+        vscode.languages.registerWorkspaceSymbolProvider(
+          new CtagsWorkspaceSymbolProvider()
+        )
+      );
     }
   }
 }
@@ -90,6 +95,7 @@ const tagsFileList = [ 'tags', '.tags', 'TAGS' ];
 let configArray: Array<SbcTarget> = [];
 let symbolRanges: vscode.Range[] = [];
 let docSymbolMap = new WeakMap<vscode.Uri, vscode.DocumentSymbol[]>();
+let wsSymbolArray: vscode.SymbolInformation[] = [];
 
 export class CtagsDocumentSymbolProvider implements vscode.DocumentSymbolProvider {
   public provideDocumentSymbols(
@@ -106,6 +112,23 @@ export class CtagsDocumentSymbolProvider implements vscode.DocumentSymbolProvide
     });
   }
 };
+
+export class CtagsWorkspaceSymbolProvider implements vscode.WorkspaceSymbolProvider {
+  public provideWorkspaceSymbols(
+    query: string, _token: vscode.CancellationToken
+  ): vscode.SymbolInformation[] {
+    return wsSymbolArray.filter(si => si.name.includes(query));
+  }
+
+  // public resolveWorkspaceSymbol(
+  //   symbol: vscode.SymbolInformation, _token: vscode.CancellationToken
+  // ): Promise<vscode.SymbolInformation> {
+  //   const result: vscode.SymbolInformation;
+  //   return new Promise((resolve, reject) => {
+  //     resolve(result);
+  //   });
+  // }
+}
 
 const nextSymbol = (textEditor: vscode.TextEditor, prev = false) => {
   const docSymArray = docSymbolMap.get(textEditor.document.uri);
@@ -139,6 +162,7 @@ const nextSymbolSub = (textEditor: vscode.TextEditor, prev: boolean, docSymArray
   }
 };
 
+// not yet check whether it is necessary to read tags file again or not.
 const buildDocumentSymbols = (document: vscode.TextDocument): Promise<vscode.DocumentSymbol[]> => {
   symbolRanges = [];
   const wf = vscode.workspace.getWorkspaceFolder(document.uri);
@@ -164,6 +188,8 @@ const buildDocumentSymbols = (document: vscode.TextDocument): Promise<vscode.Doc
     ? config.offSideRule : false;
 
   const result: vscode.DocumentSymbol[] = [];
+  // currently always refresh
+  wsSymbolArray = [];
   return new Promise<vscode.DocumentSymbol[]>((resolve, reject) => {
     let tagsFileName = tagsFileList.find(f => fs.existsSync(`${dirPath}/${f}`));
     let tagsDirPath = dirPath;
@@ -195,27 +221,44 @@ const buildDocumentSymbols = (document: vscode.TextDocument): Promise<vscode.Doc
       lines.on('line', line => {
         // currently read all lines. if 'not sorted by symbolname', to stop readline is better.
         const tokens = line.split('\t');
+
+        const symbolName = tokens[0];
+        if(symbolName.startsWith('!_TAG_')) {
+          return;
+        }
+
         // On Windows, spec within tags file may have paths separated by backslash.
         const fileNameInTokens = tokens[1].replace(/\\/g, '/');
-        if(fileNameInTokens === relativePath) {
-          const symbolName = tokens[0];
-          let kind = vscode.SymbolKind.Constructor;
-          if(kindMap !== undefined
-            && kindMap[tokens[3]] !== undefined
-            && kind2SymbolKind[kindMap[tokens[3]]] !== undefined) {
-            kind = kind2SymbolKind[kindMap[tokens[3]]];
-          }
+        // Maybe it is better to validate path.
+        const fileUriInTokens = vscode.Uri.file(`${tagsDirPath}/${fileNameInTokens}`);
 
-          const posLine = tokens.length > 4
-            ? parseInt(tokens[4].split(':')[1]) // lines:n
-            : parseInt(tokens[2].replace(';"', '')); // nn;"
-          const innerRegex = tokens[2].startsWith('/') // /^  foo$/;"
-            ? tokens[2].slice(2, tokens[2].length - 4)
-            : '';
-          const posCol = tokens[2].startsWith('/')
-            ? innerRegex.indexOf(symbolName)
-            : 0;
-          const symbolNameRange = new vscode.Range(posLine - 1, posCol, posLine - 1, posCol + symbolName.length);
+        let kind = vscode.SymbolKind.Constructor;
+        if(kindMap !== undefined
+          && kindMap[tokens[3]] !== undefined
+          && kind2SymbolKind[kindMap[tokens[3]]] !== undefined) {
+          kind = kind2SymbolKind[kindMap[tokens[3]]];
+        }
+        const posLine = tokens.length > 4
+          ? parseInt(tokens[4].split(':')[1]) // lines:n
+          : parseInt(tokens[2].replace(';"', '')); // nn;"
+        const innerRegex = tokens[2].startsWith('/') // /^  foo$/;"
+          ? tokens[2].slice(2, tokens[2].length - 4)
+          : '';
+        const posCol = tokens[2].startsWith('/')
+          ? innerRegex.indexOf(symbolName)
+          : 0;
+        const symbolNameRange = new vscode.Range(posLine - 1, posCol, posLine - 1, posCol + symbolName.length);
+
+        wsSymbolArray.push(
+          new vscode.SymbolInformation(
+            symbolName,
+            kind,
+            fileNameInTokens,
+            new vscode.Location(fileUriInTokens, symbolNameRange)
+          )
+        );
+
+        if(fileNameInTokens === relativePath) {
           symbolRanges.push(symbolNameRange);
 
           const currentSymbol = new vscode.DocumentSymbol(
