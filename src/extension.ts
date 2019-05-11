@@ -90,12 +90,12 @@ const tagsFileList = [ 'tags', '.tags', 'TAGS' ];
 let symbolRanges: vscode.Range[] = [];
 
 const nextSymbol = (textEditor: vscode.TextEditor, prev = false) => {
-  const curPos = textEditor.selection.active;
-  let nextSymbolRange = symbolRanges.find(nthSymbol => curPos.isBefore(nthSymbol.start));
+  const cursorPos = textEditor.selection.active;
+  let nextSymbolRange = symbolRanges.find(nthSymbol => cursorPos.isBefore(nthSymbol.start));
   if(prev) {
     nextSymbolRange = undefined;
     for(let i = symbolRanges.length - 1;i > -1;i--) {
-      if(curPos.isAfter(symbolRanges[i].end)) {
+      if(cursorPos.isAfter(symbolRanges[i].end)) {
         nextSymbolRange = symbolRanges[i];
         break;
       }
@@ -186,7 +186,7 @@ export class CtagsDocumentSymbolProvider implements vscode.DocumentSymbolProvide
               kind = kind2SymbolKind[kindMap[tokens[3]]];
             }
 
-            const pos = tokens.length > 4
+            const posLine = tokens.length > 4
               ? parseInt(tokens[4].split(':')[1]) // lines:n
               : parseInt(tokens[2].replace(';"', '')); // nn;"
             const innerRegex = tokens[2].startsWith('/') // /^  foo$/;"
@@ -195,15 +195,15 @@ export class CtagsDocumentSymbolProvider implements vscode.DocumentSymbolProvide
             const posCol = tokens[2].startsWith('/')
               ? innerRegex.indexOf(symbolName)
               : 0;
-            const nextSymbolRange = new vscode.Range(pos - 1, posCol, pos - 1, posCol + symbolName.length);
-            symbolRanges.push(nextSymbolRange);
+            const symbolNameRange = new vscode.Range(posLine - 1, posCol, posLine - 1, posCol + symbolName.length);
+            symbolRanges.push(symbolNameRange);
 
             const currentSymbol = new vscode.DocumentSymbol(
               symbolName,
               '',
               kind,
-              new vscode.Range(pos - 1, 0, pos, 10), // 10 and 'pos' has no meaning
-              nextSymbolRange
+              new vscode.Range(posLine - 1, 0, posLine, 10), // 'posLine, 10' has no meaning
+              symbolNameRange
             );
             currentSymbol.children = [];
 
@@ -243,7 +243,7 @@ export class CtagsDocumentSymbolProvider implements vscode.DocumentSymbolProvide
                   break;
                 }
                 else {
-                  parent.range = parent.range.with({end: new vscode.Position(pos - 1, 0)});
+                  parent.range = parent.range.with({end: new vscode.Position(posLine - 1, 0)});
                   parentArray.pop();
                 }
               }
@@ -257,9 +257,7 @@ export class CtagsDocumentSymbolProvider implements vscode.DocumentSymbolProvide
                 result.push(currentSymbol);
               }
               else {
-                const parent = result.find(docSym => {
-                  return docSym.name === currentTreeTop;
-                });
+                const parent = result.find(docSym => docSym.name === currentTreeTop);
                 if(parent !== undefined) {
                   parent.children.push(currentSymbol);
                 }
@@ -274,14 +272,10 @@ export class CtagsDocumentSymbolProvider implements vscode.DocumentSymbolProvide
               let parent: (vscode.DocumentSymbol | undefined) = undefined;
               for(const ancestor of tokens[5].slice(1 + tokens[5].indexOf(':')).split(sro)) {
                 if(parent === undefined) { // 1st ansector
-                  parent = result.find(docSym => {
-                    return docSym.name === ancestor;
-                  });
+                  parent = result.find(docSym => docSym.name === ancestor);
                 }
                 else {
-                  parent = parent.children.find(docSym => {
-                    return docSym.name === ancestor;
-                  });
+                  parent = parent.children.find(docSym => docSym.name === ancestor);
                 }
                 if(parent === undefined) { // failed one
                   break;
