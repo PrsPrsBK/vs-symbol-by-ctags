@@ -4,6 +4,7 @@
 
 * 2019-05-07 0.9.0 experimental `offSideRule` setting
 * 2019-05-12 0.9.1 fix: next/prevCommand does not work before 'Outline' pane is shown or `Ctrl+Shift+o`.
+* 2019-05-12 0.9.2 fix: (again) On Windows, spec within tags file may have paths separated by backslash.
 
 
 # Release Notes
