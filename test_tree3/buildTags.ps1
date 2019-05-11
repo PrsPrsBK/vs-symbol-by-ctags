@@ -1,1 +1,1 @@
-ctags -f tags --sort=no --fields=nksaSmtf *
+ctags -f tags --sort=no --fields=nksaSmtf -R *

@@ -196,7 +196,7 @@ const buildDocumentSymbols = (document: vscode.TextDocument): Promise<vscode.Doc
         // currently read all lines. if 'not sorted by symbolname', to stop readline is better.
         const tokens = line.split('\t');
         // On Windows, spec within tags file may have paths separated by backslash.
-        const fileNameInTokens = tokens[1].replace('\\', '/');
+        const fileNameInTokens = tokens[1].replace(/\\/g, '/');
         if(fileNameInTokens === relativePath) {
           const symbolName = tokens[0];
           let kind = vscode.SymbolKind.Constructor;
