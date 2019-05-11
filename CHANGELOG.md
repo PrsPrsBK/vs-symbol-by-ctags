@@ -1,10 +1,8 @@
 # Latest
 
-## 0.9.0
+## 0.10.0
 
-* 2019-05-07 0.9.0 experimental `offSideRule` setting
-* 2019-05-12 0.9.1 fix: next/prevCommand does not work before 'Outline' pane is shown or `Ctrl+Shift+o`.
-* 2019-05-12 0.9.2 fix: (again) On Windows, spec within tags file may have paths separated by backslash.
+* 2019-05-12 0.10.0 Workspase-wide symbol search via `Ctrl+t`, powered by `WorkspaceSymbolProvider`.
 
 
 # Release Notes
@@ -70,3 +68,9 @@ PowerShell$ python d:/bin/rst2ctags.py -f .tags --sort=no docFoo.rst docBar.rst 
 
 * 2019-05-07 0.8.4
 * fix: On Windows, spec within tags file may have paths separated by backslash.
+
+## 0.9.0
+
+* 2019-05-07 0.9.0 experimental `offSideRule` setting
+* 2019-05-12 0.9.1 fix: next/prevCommand does not work before 'Outline' pane is shown or `Ctrl+Shift+o`.
+* 2019-05-12 0.9.2 fix: (again) On Windows, spec within tags file may have paths separated by backslash.
