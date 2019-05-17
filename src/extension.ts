@@ -52,7 +52,7 @@ export function activate(context: vscode.ExtensionContext) {
 
 export function deactivate() { }
 
-interface SbcTarget {
+type SbcTarget = {
   name: string;
   glob: string;
   ends: string[];
@@ -60,7 +60,7 @@ interface SbcTarget {
   sro: string;
   restartTree: string;
   offSideRule: boolean;
-}
+};
 
 const kind2SymbolKind: any = {
   'Array': vscode.SymbolKind.Array,
@@ -125,15 +125,15 @@ const nextSymbol = (textEditor: vscode.TextEditor, prev = false) => {
   const docSymArray = docSymbolMap.get(textEditor.document.uri);
   if(docSymArray === undefined) {
     buildDocumentSymbols(textEditor.document).then(result => {
-      nextSymbolSub(textEditor, prev, result);
+      nextSymbolSub(textEditor, prev);
     });
   }
   else {
-    nextSymbolSub(textEditor, prev, docSymArray);
+    nextSymbolSub(textEditor, prev);
   }
 };
 
-const nextSymbolSub = (textEditor: vscode.TextEditor, prev: boolean, docSymArray: vscode.DocumentSymbol[]) => {
+const nextSymbolSub = (textEditor: vscode.TextEditor, prev: boolean) => {
   const cursorPos = textEditor.selection.active;
   let nextSymbolRange = symbolRanges.find(nthSymbol => cursorPos.isBefore(nthSymbol.start));
   if(prev) {
