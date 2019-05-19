@@ -184,12 +184,9 @@ In the case that you use 'Open as folder', write to `someFolder/.vscode/settings
 TODO
 ====================
 
-* Separate getting and storing informations of 'doc and its tags file'.
-* Caching informations of 'doc and its symbols'.
-* After above things done.
-
-  * ~~Reference Provider~~ maybe impossible.
-  * ~~Rename Provider~~ maybe impossible or not worth implementing (you can resort to `Ctrl+H` and confirm one by one).
+* [author want] working without tags file.
+* [author want] 'fixed reference' to tags file of some basic repository.
+* [author maybe want] completion. but `sro` may not be simple, e.g. `.` and `.>` and so.
 
 
 Known Issues
@@ -201,7 +198,7 @@ Maybe all things are easy to be changed, excuse me.
 * need to be activated by command, intended not to bother other extensions.
 
   * `"workspaceContains:**/.tags"` or so ~~may be better~~ is not appropriate,
-    because project may have tags file and does not want this extension to work at all.
+    because project may have tags file and want this extension not to work at all.
 
 * do not jump between files like a `go to definition`, other than `Ctrl+t`.
 * do not rename.
