@@ -3,7 +3,7 @@
 ## 0.10.0
 
 * 2019-05-12 0.10.0 Workspase-wide symbol search via `Ctrl+t`, powered by `WorkspaceSymbolProvider`.
-
+* 2019-05-19 0.10.1 fix: next/prev jump fails when doc was opened via `Ctrl+P` or `Ctrl+PageUp/Down`
 
 # Release Notes
 
