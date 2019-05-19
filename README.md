@@ -199,7 +199,10 @@ In short, the capability is limited very much, and under dogfooding.
 Maybe all things are easy to be changed, excuse me.
 
 * need to be activated by command, intended not to bother other extensions.
-  `"workspaceContains:**/.tags"` or so may be better.
+
+  * `"workspaceContains:**/.tags"` or so ~~may be better~~ is not appropriate,
+    because project may have tags file and does not want this extension to work at all.
+
 * do not jump between files like a `go to definition`, other than `Ctrl+t`.
 * do not rename.
 * do not generate ctags file.
