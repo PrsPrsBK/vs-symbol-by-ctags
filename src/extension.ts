@@ -56,13 +56,13 @@ type SbcTarget = {
   name: string;
   glob: string;
   ends: string[];
-  kindMap: any;
+  kindMap: {[key: string]: string};
   sro: string;
   restartTree: string;
   offSideRule: boolean;
 };
 
-const kind2SymbolKind: any = {
+const kind2SymbolKind: {[key: string]: vscode.SymbolKind} = {
   'Array': vscode.SymbolKind.Array,
   'Boolean': vscode.SymbolKind.Boolean,
   'Class': vscode.SymbolKind.Class,
