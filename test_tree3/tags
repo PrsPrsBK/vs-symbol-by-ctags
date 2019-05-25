@@ -43,3 +43,4 @@ command	main.pony	/^  fun command(task: String, rest: Array[String] box) =>$/;"	
 SubSub	sub01\sub11\sub11.pony	/^class SubSub$/;"	c	line:1
 _i	sub01\sub11\sub11.pony	/^  var _i: U64 = 0$/;"	v	line:2
 create	sub01\sub11\sub11.pony	/^  new iso create() =>$/;"	n	line:4
+module.exports.env	WebExtensions\wext\.eslintrc.js	/^  'env': {$/;"	p	line:2

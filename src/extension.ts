@@ -213,14 +213,14 @@ const buildDocumentSymbols = (document: vscode.TextDocument): Promise<vscode.Doc
       let parentArray: [string, number][] = [];
 
       lines.on('line', line => {
+        if(line.startsWith('!_TAG_')) {
+          return;
+        }
+
         // currently read all lines. if 'not sorted by symbolname', to stop readline is better.
         const tokens = line.split('\t');
 
         const symbolName = tokens[0];
-        if(symbolName.startsWith('!_TAG_')) {
-          return;
-        }
-
         // On Windows, spec within tags file may have paths separated by backslash.
         const fileNameInTokens = tokens[1].replace(/\\/g, '/');
         // Maybe it is better to validate path.
@@ -238,7 +238,7 @@ const buildDocumentSymbols = (document: vscode.TextDocument): Promise<vscode.Doc
         const innerRegex = tokens[2].startsWith('/') // /^  foo$/;"
           ? tokens[2].slice(2, tokens[2].length - 4)
           : '';
-        const posCol = tokens[2].startsWith('/')
+        const posCol = (tokens[2].startsWith('/') && innerRegex.indexOf(symbolName) !== -1)
           ? innerRegex.indexOf(symbolName)
           : 0;
         const symbolNameRange = new vscode.Range(posLine - 1, posCol, posLine - 1, posCol + symbolName.length);
