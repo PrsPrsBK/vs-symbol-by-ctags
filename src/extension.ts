@@ -100,9 +100,6 @@ type eachWorkspace = {
   wsSymbolArray: vscode.SymbolInformation[],
 };
 let allWorkspace = new Map<string, eachWorkspace>();
-let docRangeMap = new Map<string, vscode.Range[]>();
-let docSymbolMap = new Map<string, vscode.DocumentSymbol[]>();
-let wsSymbolArray: vscode.SymbolInformation[] = [];
 
 const getEachWsInfo = (textEditor: vscode.TextEditor): eachWorkspace | undefined => {
   const curWs = vscode.workspace.getWorkspaceFolder(textEditor.document.uri);
@@ -136,14 +133,10 @@ export class CtagsWorkspaceSymbolProvider implements vscode.WorkspaceSymbolProvi
       return [];
     }
     const eachWsInfo = getEachWsInfo(ate);
-    if(eachWsInfo === undefined) {
+    if(eachWsInfo === undefined || eachWsInfo.wsSymbolArray === undefined) {
       return [];
     }
-    wsSymbolArray = eachWsInfo.wsSymbolArray;
-    if(wsSymbolArray === undefined) {
-      return [];
-    }
-    return wsSymbolArray.filter(si => si.name.includes(query));
+    return eachWsInfo.wsSymbolArray.filter(si => si.name.includes(query));
   }
 }
 
@@ -152,7 +145,7 @@ const nextSymbol = (textEditor: vscode.TextEditor, prev = false) => {
   if(eachWsInfo === undefined || eachWsInfo.docSymbolMap === undefined) {
     return;
   }
-  const docSymArray = eachWsInfo.docSymbolMap.get(textEditor.document.uri.fsPath);
+  const docSymArray = eachWsInfo.docSymbolMap.get(textEditor.document.uri.path);
   if(docSymArray === undefined) {
     buildDocumentSymbols(textEditor.document).then(_result => {
       nextSymbolSub(textEditor, prev);
@@ -169,7 +162,7 @@ const nextSymbolSub = (textEditor: vscode.TextEditor, prev: boolean) => {
   if(eachWsInfo === undefined || eachWsInfo.docRangeMap === undefined) {
     return;
   }
-  let symbolRanges = eachWsInfo.docRangeMap.get(textEditor.document.uri.fsPath);
+  let symbolRanges = eachWsInfo.docRangeMap.get(textEditor.document.uri.path);
   if(symbolRanges === undefined) {
     return;
   }
@@ -194,18 +187,24 @@ const nextSymbolSub = (textEditor: vscode.TextEditor, prev: boolean) => {
 // not yet check whether it is necessary to read tags file again or not.
 const buildDocumentSymbols = (document: vscode.TextDocument): Promise<vscode.DocumentSymbol[]> => {
   const wf = vscode.workspace.getWorkspaceFolder(document.uri);
-  if(wf !== undefined) {
+  if(wf === undefined) {
+    return Promise.reject([]);
+  }
+  else {
     console.log(`wf: ${wf.uri.path}`);
   }
   // On win32, you get path such as /x:/path/to/folder
   const sliceFrom = os.platform() === 'win32' ? 1 : 0;
   //'.' means directory of code.exe
-  const fileName = document.uri.path.replace(/.*\/([^\/]+)/, '$1');
-  const dirPath = document.uri.path.replace(/(.+)\/[^\/]+$/, '$1').slice(sliceFrom);
+  const docFileName = document.uri.path.replace(/.*\/([^\/]+)/, '$1');
+  const docDirPath = document.uri.path.replace(/(.+)\/[^\/]+$/, '$1').slice(sliceFrom);
   const config: (SbcTarget | undefined) = configArray.find(aConfig => {
-    const wk = aConfig.ends.find(nameEnd => fileName.endsWith(nameEnd));
-    return wk !== undefined;
+    return undefined !== aConfig.ends.find(nameEnd => docFileName.endsWith(nameEnd));
   });
+
+  /**
+   * get each settings for current document.
+   */
   // sro: Scope Resolution Operator, '::' in C++, '.' in Java.
   const sro: string = (config !== undefined && config.sro !== undefined)
     ? config.sro : '';
@@ -217,11 +216,15 @@ const buildDocumentSymbols = (document: vscode.TextDocument): Promise<vscode.Doc
 
   const result: vscode.DocumentSymbol[] = [];
   // currently always refresh
-  docRangeMap = new Map<string, vscode.Range[]>();
-  wsSymbolArray = [];
+  const curWsInfo = {
+    docRangeMap: new Map<string, vscode.Range[]>(),
+    docSymbolMap: new Map<string, vscode.DocumentSymbol[]>(),
+    wsSymbolArray: [],
+  } as eachWorkspace;
+  allWorkspace.set(wf.uri.path, curWsInfo);
 
-  let tagsFileName = tagsFileList.find(f => fs.existsSync(`${dirPath}/${f}`));
-  let tagsDirPath = dirPath;
+  let tagsFileName = tagsFileList.find(f => fs.existsSync(`${docDirPath}/${f}`));
+  let tagsDirPath = docDirPath;
   if(tagsFileName === undefined && wf !== undefined) {
     const wfPath = wf.uri.path.slice(sliceFrom);
     while(true) {
@@ -240,9 +243,9 @@ const buildDocumentSymbols = (document: vscode.TextDocument): Promise<vscode.Doc
     }
     else {
       // filePath within tags file is 'foo/bar/file'
-      const relativePath = tagsDirPath === dirPath
-        ? fileName
-        : `${dirPath.slice(1 + tagsDirPath.length)}/${fileName}`;
+      const relativePath = tagsDirPath === docDirPath
+        ? docFileName
+        : `${docDirPath.slice(1 + tagsDirPath.length)}/${docFileName}`;
       const kindMap = config !== undefined ? config.kindMap : undefined;
       const rs = fs.createReadStream(`${tagsDirPath}/${tagsFileName}`);
       const lines = readline.createInterface(rs);
@@ -280,7 +283,7 @@ const buildDocumentSymbols = (document: vscode.TextDocument): Promise<vscode.Doc
           : 0;
         const symbolNameRange = new vscode.Range(posLine - 1, posCol, posLine - 1, posCol + symbolName.length);
 
-        wsSymbolArray.push(
+        curWsInfo.wsSymbolArray.push(
           new vscode.SymbolInformation(
             symbolName,
             kind,
@@ -289,14 +292,12 @@ const buildDocumentSymbols = (document: vscode.TextDocument): Promise<vscode.Doc
           )
         );
 
-        // docSymbolRanges.get() ALWAYS has possibility of 'undefined',
-        // even if after if(...has()) checked. so workVar is necessary.
-        let workSymbolRanges: vscode.Range[] | undefined = docRangeMap.get(fileUriInTokens.fsPath);
+        let workSymbolRanges = curWsInfo.docRangeMap.get(fileUriInTokens.path);
         if(workSymbolRanges === undefined) {
           workSymbolRanges = [];
+          curWsInfo.docRangeMap.set(fileUriInTokens.path, workSymbolRanges);
         }
         workSymbolRanges.push(symbolNameRange);
-        docRangeMap.set(fileUriInTokens.fsPath, workSymbolRanges);
 
         if(fileNameInTokens === relativePath) {
 
@@ -427,7 +428,7 @@ const buildDocumentSymbols = (document: vscode.TextDocument): Promise<vscode.Doc
           }
         }
         rs.destroy();
-        docSymbolMap.set(document.uri.fsPath, result);
+        curWsInfo.docSymbolMap.set(document.uri.path, result);
         resolve(result);
       });
     }
