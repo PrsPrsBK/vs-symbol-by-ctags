@@ -20,10 +20,10 @@ tags file name is one of `tags`, `.tags`, `TAGS`.
 If your tags file is load and your target file has symbols, some changes will happen.
 Some items will be appear within `Outline` pane of `Explorer` side-bar,
 and you can search symbols by typing it's name
-via `Control + Shift + o` (or type `@` after `Control + p`)
+via `Ctrl+Shift+O` (or type `@` after `Ctrl+P`)
 (keybinds depends on your settings and physical keyboard. I use japanese keyboard on Windows 10.).
 
-Since 0.10.0, you can workspace-wide symbol search via `Control + t` (case-sensitive and rough).
+Since 0.10.0, you can workspace-wide symbol search via `Ctrl+T` (case-sensitive and rough).
 
 
 command
@@ -203,7 +203,7 @@ Maybe all things are easy to be changed, excuse me.
   * `"workspaceContains:**/.tags"` or so ~~may be better~~ is not appropriate,
     because project may have tags file and want this extension not to work at all.
 
-* do not jump between files like a `go to definition`, other than `Ctrl+t`.
+* do not jump between files like a `go to definition`, other than `Ctrl+T`.
 * do not rename.
 * do not generate ctags file.
 * do not see the change of ctags file instantly. If re-open the file, changes will be effected.
