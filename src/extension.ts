@@ -93,6 +93,13 @@ const kind2SymbolKind: {[key: string]: vscode.SymbolKind} = {
 
 const tagsFileList = [ 'tags', '.tags', 'TAGS' ];
 let configArray: Array<SbcTarget> = [];
+
+type eachWorkspace = {
+  docRangeMap: Map<string, vscode.Range[]>,
+  docSymbolMap: Map<string, vscode.DocumentSymbol[]>,
+  wsSymbolArray: vscode.SymbolInformation[],
+};
+let allWorkspace = new Map<string, eachWorkspace>();
 let docRangeMap = new Map<string, vscode.Range[]>();
 let docSymbolMap = new Map<string, vscode.DocumentSymbol[]>();
 let wsSymbolArray: vscode.SymbolInformation[] = [];
@@ -116,6 +123,22 @@ export class CtagsWorkspaceSymbolProvider implements vscode.WorkspaceSymbolProvi
   public provideWorkspaceSymbols(
     query: string, _token: vscode.CancellationToken
   ): vscode.SymbolInformation[] {
+    const ate = vscode.window.activeTextEditor;
+    if(ate === undefined) {
+      return [];
+    }
+    const curWs = vscode.workspace.getWorkspaceFolder(ate.document.uri);
+    if(curWs === undefined) {
+      return [];
+    }
+    const eachWsInfo = allWorkspace.get(curWs.uri.path);
+    if(eachWsInfo === undefined) {
+      return [];
+    }
+    wsSymbolArray = eachWsInfo.wsSymbolArray;
+    if(wsSymbolArray === undefined) {
+      return [];
+    }
     return wsSymbolArray.filter(si => si.name.includes(query));
   }
 }
