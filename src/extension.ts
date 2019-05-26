@@ -184,19 +184,21 @@ const buildDocumentSymbols = (document: vscode.TextDocument): Promise<vscode.Doc
   // currently always refresh
   docRangeMap = new Map<string, vscode.Range[]>();
   wsSymbolArray = [];
-  return new Promise<vscode.DocumentSymbol[]>((resolve, reject) => {
-    let tagsFileName = tagsFileList.find(f => fs.existsSync(`${dirPath}/${f}`));
-    let tagsDirPath = dirPath;
-    if(tagsFileName === undefined && wf !== undefined) {
-      const wfPath = wf.uri.path.slice(sliceFrom);
-      while(true) {
-        if(tagsDirPath === wfPath || tagsFileName !== undefined) {
-          break;
-        }
-        tagsDirPath = tagsDirPath.replace(/(.+)\/[^\/]+$/, '$1');
-        tagsFileName = tagsFileList.find(f => fs.existsSync(`${tagsDirPath}/${f}`));
+
+  let tagsFileName = tagsFileList.find(f => fs.existsSync(`${dirPath}/${f}`));
+  let tagsDirPath = dirPath;
+  if(tagsFileName === undefined && wf !== undefined) {
+    const wfPath = wf.uri.path.slice(sliceFrom);
+    while(true) {
+      if(tagsDirPath === wfPath || tagsFileName !== undefined) {
+        break;
       }
+      tagsDirPath = tagsDirPath.replace(/(.+)\/[^\/]+$/, '$1');
+      tagsFileName = tagsFileList.find(f => fs.existsSync(`${tagsDirPath}/${f}`));
     }
+  }
+
+  return new Promise<vscode.DocumentSymbol[]>((resolve, reject) => {
     if(tagsFileName === undefined) {
       console.error('tags file not found.');
       reject(result);
@@ -226,7 +228,7 @@ const buildDocumentSymbols = (document: vscode.TextDocument): Promise<vscode.Doc
         // Maybe it is better to validate path.
         const fileUriInTokens = vscode.Uri.file(`${tagsDirPath}/${fileNameInTokens}`);
 
-        let kind = vscode.SymbolKind.Constructor;
+        let kind = vscode.SymbolKind.Constructor; // no reason for Constructor
         if(kindMap !== undefined
           && kindMap[tokens[3]] !== undefined
           && kind2SymbolKind[kindMap[tokens[3]]] !== undefined) {
