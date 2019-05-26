@@ -1,10 +1,8 @@
 # Latest
 
-## 0.10.0
+## 0.11.0
 
-* 2019-05-12 0.10.0 Workspase-wide symbol search via `Ctrl+t`, powered by `WorkspaceSymbolProvider`.
-* 2019-05-19 0.10.1 fix: next/prev jump fails when doc was opened via `Ctrl+P` or `Ctrl+PageUp/Down`
-* 2019-05-25 0.10.2 fix: runtime failure on new Location() results in 'No Symbol'
+* 2019-05-26 0.11.0 fix: isolate Symbols by each Workspaces.
 
 # Release Notes
 
@@ -75,3 +73,9 @@ PowerShell$ python d:/bin/rst2ctags.py -f .tags --sort=no docFoo.rst docBar.rst 
 * 2019-05-07 0.9.0 experimental `offSideRule` setting
 * 2019-05-12 0.9.1 fix: next/prevCommand does not work before 'Outline' pane is shown or `Ctrl+Shift+o`.
 * 2019-05-12 0.9.2 fix: (again) On Windows, spec within tags file may have paths separated by backslash.
+
+## 0.10.0
+
+* 2019-05-12 0.10.0 Workspase-wide symbol search via `Ctrl+t`, powered by `WorkspaceSymbolProvider`.
+* 2019-05-19 0.10.1 fix: next/prev jump fails when doc was opened via `Ctrl+P` or `Ctrl+PageUp/Down`
+* 2019-05-25 0.10.2 fix: runtime failure on new Location() results in 'No Symbol'
