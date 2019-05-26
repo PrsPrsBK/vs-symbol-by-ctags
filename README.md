@@ -11,7 +11,7 @@ So let's rely on ctags' power.
 How to use
 ====================
 
-This extension works the cases than you operate on files by 'Open Workspace' or by 'Open Folder', 
+This extension works for the cases that you operate on files by 'Open Workspace' or by 'Open Folder', 
 and does not work for the case of 'Open File'.
 
 At first, prepare tags file, and then, activate this extension by `Symbol by Ctags` command.
