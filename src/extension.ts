@@ -104,6 +104,14 @@ let docRangeMap = new Map<string, vscode.Range[]>();
 let docSymbolMap = new Map<string, vscode.DocumentSymbol[]>();
 let wsSymbolArray: vscode.SymbolInformation[] = [];
 
+const getEachWsInfo = (textEditor: vscode.TextEditor): eachWorkspace | undefined => {
+  const curWs = vscode.workspace.getWorkspaceFolder(textEditor.document.uri);
+  if(curWs === undefined) {
+    return undefined;
+  }
+  return allWorkspace.get(curWs.uri.path);
+};
+
 export class CtagsDocumentSymbolProvider implements vscode.DocumentSymbolProvider {
   public provideDocumentSymbols(
     document: vscode.TextDocument, _token: vscode.CancellationToken
@@ -127,11 +135,7 @@ export class CtagsWorkspaceSymbolProvider implements vscode.WorkspaceSymbolProvi
     if(ate === undefined) {
       return [];
     }
-    const curWs = vscode.workspace.getWorkspaceFolder(ate.document.uri);
-    if(curWs === undefined) {
-      return [];
-    }
-    const eachWsInfo = allWorkspace.get(curWs.uri.path);
+    const eachWsInfo = getEachWsInfo(ate);
     if(eachWsInfo === undefined) {
       return [];
     }
@@ -144,9 +148,13 @@ export class CtagsWorkspaceSymbolProvider implements vscode.WorkspaceSymbolProvi
 }
 
 const nextSymbol = (textEditor: vscode.TextEditor, prev = false) => {
-  const docSymArray = docSymbolMap.get(textEditor.document.uri.fsPath);
+  const eachWsInfo = getEachWsInfo(textEditor);
+  if(eachWsInfo === undefined || eachWsInfo.docSymbolMap === undefined) {
+    return;
+  }
+  const docSymArray = eachWsInfo.docSymbolMap.get(textEditor.document.uri.fsPath);
   if(docSymArray === undefined) {
-    buildDocumentSymbols(textEditor.document).then(result => {
+    buildDocumentSymbols(textEditor.document).then(_result => {
       nextSymbolSub(textEditor, prev);
     });
   }
@@ -157,7 +165,11 @@ const nextSymbol = (textEditor: vscode.TextEditor, prev = false) => {
 
 const nextSymbolSub = (textEditor: vscode.TextEditor, prev: boolean) => {
   const cursorPos = textEditor.selection.active;
-  let symbolRanges = docRangeMap.get(textEditor.document.uri.fsPath);
+  const eachWsInfo = getEachWsInfo(textEditor);
+  if(eachWsInfo === undefined || eachWsInfo.docRangeMap === undefined) {
+    return;
+  }
+  let symbolRanges = eachWsInfo.docRangeMap.get(textEditor.document.uri.fsPath);
   if(symbolRanges === undefined) {
     return;
   }
