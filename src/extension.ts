@@ -273,6 +273,37 @@ const buildDocumentSymbols = (document: vscode.TextDocument): Promise<vscode.Doc
     let currentTreeTop = '';
     let parentArray: [string, number][] = [];
 
+    const endOfSameFile = () => {
+      if(offSideRule && parentArray.length > 0) {
+        while(true) {
+          if(parentArray.length === 0) {
+            break;
+          }
+          const last = parentArray[parentArray.length - 1];
+          let parent: (vscode.DocumentSymbol | undefined) = undefined;
+          for(const ancestor of parentArray) {
+            if(parent === undefined) { // 1st ansector
+              parent = result.find(docSym => docSym.name === ancestor[0]);
+            }
+            else {
+              parent = parent.children.find(docSym => docSym.name === ancestor[0]);
+            }
+            if(parent === undefined) { // failed one
+              break;
+            }
+          }
+          if(parent === undefined) {
+            console.error(`${new Date().toLocaleTimeString()} ERROR: ${last[0]}: at symbol hierarchy spec within tags file`);
+            parentArray = [];
+          }
+          else {
+            parent.range = parent.range.with({end: new vscode.Position(document.lineCount - 1, 0)});
+            parentArray.pop();
+          }
+        }
+      }
+    };
+
     lines.on('line', line => {
       if(line.startsWith('!_TAG_')) {
         return;
@@ -420,34 +451,7 @@ const buildDocumentSymbols = (document: vscode.TextDocument): Promise<vscode.Doc
     });
 
     lines.on('close', () => {
-      if(offSideRule && parentArray.length > 0) {
-        while(true) {
-          if(parentArray.length === 0) {
-            break;
-          }
-          const last = parentArray[parentArray.length - 1];
-          let parent: (vscode.DocumentSymbol | undefined) = undefined;
-          for(const ancestor of parentArray) {
-            if(parent === undefined) { // 1st ansector
-              parent = result.find(docSym => docSym.name === ancestor[0]);
-            }
-            else {
-              parent = parent.children.find(docSym => docSym.name === ancestor[0]);
-            }
-            if(parent === undefined) { // failed one
-              break;
-            }
-          }
-          if(parent === undefined) {
-            console.error(`${new Date().toLocaleTimeString()} ERROR: ${last[0]}: at symbol hierarchy spec within tags file`);
-            parentArray = [];
-          }
-          else {
-            parent.range = parent.range.with({end: new vscode.Position(document.lineCount - 1, 0)});
-            parentArray.pop();
-          }
-        }
-      }
+      endOfSameFile();
       rs.destroy();
       curWsInfo.docSymbolMap.set(document.uri.path, result);
       resolve(result);
