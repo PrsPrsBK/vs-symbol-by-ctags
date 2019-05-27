@@ -95,6 +95,7 @@ const tagsFileList = [ 'tags', '.tags', 'TAGS' ];
 let configArray: Array<SbcTarget> = [];
 
 type eachWorkspace = {
+  mstimeMs: number,
   docRangeMap: Map<string, vscode.Range[]>,
   docSymbolMap: Map<string, vscode.DocumentSymbol[]>,
   wsSymbolArray: vscode.SymbolInformation[],
@@ -214,15 +215,6 @@ const buildDocumentSymbols = (document: vscode.TextDocument): Promise<vscode.Doc
   const offSideRule: boolean = (config !== undefined && config.offSideRule !== undefined)
     ? config.offSideRule : false;
 
-  const result: vscode.DocumentSymbol[] = [];
-  // currently always refresh
-  const curWsInfo = {
-    docRangeMap: new Map<string, vscode.Range[]>(),
-    docSymbolMap: new Map<string, vscode.DocumentSymbol[]>(),
-    wsSymbolArray: [],
-  } as eachWorkspace;
-  allWorkspace.set(wf.uri.path, curWsInfo);
-
   let tagsFileName = tagsFileList.find(f => fs.existsSync(`${docDirPath}/${f}`));
   let tagsDirPath = docDirPath;
   if(tagsFileName === undefined && wf !== undefined) {
@@ -239,6 +231,36 @@ const buildDocumentSymbols = (document: vscode.TextDocument): Promise<vscode.Doc
     console.error('tags file not found.');
     return Promise.reject([]);
   }
+
+  const lastMtimeMs = fs.statSync(`${tagsDirPath}/${tagsFileName}`).mtimeMs;
+  console.log(JSON.stringify(lastMtimeMs)); //1558774393762.249
+
+  // liveWsInfo is just a workaround.
+  // I do not know why tsc ignores '=== undefined' and re-assigning to curWsInfo,
+  // and eventually results in failure to compile.
+  let liveWsInfo = allWorkspace.get(wf.uri.path);
+  // curWsInfo already exists, so let's see.
+  if(liveWsInfo !== undefined) {
+    if(liveWsInfo.mstimeMs === lastMtimeMs) { // NOT modified!
+      const liveDocumentSymbols = liveWsInfo.docSymbolMap.get(document.uri.path);
+      if(liveDocumentSymbols !== undefined) {
+        return Promise.resolve(liveDocumentSymbols);
+      }
+      else {
+        return Promise.resolve([]); // empty in fact.
+      }
+    }
+  }
+
+  const curWsInfo = {
+    mstimeMs: lastMtimeMs,
+    docRangeMap: new Map<string, vscode.Range[]>(),
+    docSymbolMap: new Map<string, vscode.DocumentSymbol[]>(),
+    wsSymbolArray: [],
+  } as eachWorkspace;
+  allWorkspace.set(wf.uri.path, curWsInfo);
+
+  const result: vscode.DocumentSymbol[] = [];
 
   return new Promise<vscode.DocumentSymbol[]>((resolve, _reject) => {
     // filePath within tags file is 'foo/bar/file'
