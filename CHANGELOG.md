@@ -1,10 +1,8 @@
 # Latest
 
-## 0.11.0
+## 0.12.0
 
-* 2019-05-26 0.11.0 fix: isolate Symbols within each Workspaces.
-  This is related to `Ctrl+T` search that had unstable behavior dependent on the timing of its execution.
-* 2019-05-27 0.11.1 fix: README
+* 2019-05-27 0.12.0 do not read tags file again when not modified
 
 # Release Notes
 
@@ -81,3 +79,9 @@ PowerShell$ python d:/bin/rst2ctags.py -f .tags --sort=no docFoo.rst docBar.rst 
 * 2019-05-12 0.10.0 Workspase-wide symbol search via `Ctrl+t`, powered by `WorkspaceSymbolProvider`.
 * 2019-05-19 0.10.1 fix: next/prev jump fails when doc was opened via `Ctrl+P` or `Ctrl+PageUp/Down`
 * 2019-05-25 0.10.2 fix: runtime failure on new Location() results in 'No Symbol'
+
+## 0.11.0
+
+* 2019-05-26 0.11.0 fix: isolate Symbols within each Workspaces.
+  This is related to `Ctrl+T` search that had unstable behavior dependent on the timing of its execution.
+* 2019-05-27 0.11.1 fix: README
