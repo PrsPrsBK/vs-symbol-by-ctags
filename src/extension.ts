@@ -235,173 +235,88 @@ const buildDocumentSymbols = (document: vscode.TextDocument): Promise<vscode.Doc
       tagsFileName = tagsFileList.find(f => fs.existsSync(`${tagsDirPath}/${f}`));
     }
   }
+  if(tagsFileName === undefined) {
+    console.error('tags file not found.');
+    return Promise.reject([]);
+  }
 
-  return new Promise<vscode.DocumentSymbol[]>((resolve, reject) => {
-    if(tagsFileName === undefined) {
-      console.error('tags file not found.');
-      reject(result);
-    }
-    else {
-      // filePath within tags file is 'foo/bar/file'
-      const relativePath = tagsDirPath === docDirPath
-        ? docFileName
-        : `${docDirPath.slice(1 + tagsDirPath.length)}/${docFileName}`;
-      const kindMap = config !== undefined ? config.kindMap : undefined;
-      const rs = fs.createReadStream(`${tagsDirPath}/${tagsFileName}`);
-      const lines = readline.createInterface(rs);
-      let currentTreeTop = '';
-      let parentArray: [string, number][] = [];
+  return new Promise<vscode.DocumentSymbol[]>((resolve, _reject) => {
+    // filePath within tags file is 'foo/bar/file'
+    const relativePath = tagsDirPath === docDirPath
+      ? docFileName
+      : `${docDirPath.slice(1 + tagsDirPath.length)}/${docFileName}`;
+    const kindMap = config !== undefined ? config.kindMap : undefined;
+    const rs = fs.createReadStream(`${tagsDirPath}/${tagsFileName}`);
+    const lines = readline.createInterface(rs);
+    let currentTreeTop = '';
+    let parentArray: [string, number][] = [];
 
-      lines.on('line', line => {
-        if(line.startsWith('!_TAG_')) {
-          return;
-        }
+    lines.on('line', line => {
+      if(line.startsWith('!_TAG_')) {
+        return;
+      }
 
-        // currently read all lines. if 'not sorted by symbolname', to stop readline is better.
-        const tokens = line.split('\t');
+      // currently read all lines. if 'not sorted by symbolname', to stop readline is better.
+      const tokens = line.split('\t');
 
-        const symbolName = tokens[0];
-        // On Windows, spec within tags file may have paths separated by backslash.
-        const fileNameInTokens = tokens[1].replace(/\\/g, '/');
-        // Maybe it is better to validate path.
-        const fileUriInTokens = vscode.Uri.file(`${tagsDirPath}/${fileNameInTokens}`);
+      const symbolName = tokens[0];
+      // On Windows, spec within tags file may have paths separated by backslash.
+      const fileNameInTokens = tokens[1].replace(/\\/g, '/');
+      // Maybe it is better to validate path.
+      const fileUriInTokens = vscode.Uri.file(`${tagsDirPath}/${fileNameInTokens}`);
 
-        let kind = vscode.SymbolKind.Constructor; // no reason for Constructor
-        if(kindMap !== undefined
-          && kindMap[tokens[3]] !== undefined
-          && kind2SymbolKind[kindMap[tokens[3]]] !== undefined) {
-          kind = kind2SymbolKind[kindMap[tokens[3]]];
-        }
-        const posLine = tokens.length > 4
-          ? parseInt(tokens[4].split(':')[1]) // lines:n
-          : parseInt(tokens[2].replace(';"', '')); // nn;"
-        const innerRegex = tokens[2].startsWith('/') // /^  foo$/;"
-          ? tokens[2].slice(2, tokens[2].length - 4)
-          : '';
-        const posCol = (tokens[2].startsWith('/') && innerRegex.indexOf(symbolName) !== -1)
-          ? innerRegex.indexOf(symbolName)
-          : 0;
-        const symbolNameRange = new vscode.Range(posLine - 1, posCol, posLine - 1, posCol + symbolName.length);
+      let kind = vscode.SymbolKind.Constructor; // no reason for Constructor
+      if(kindMap !== undefined
+        && kindMap[tokens[3]] !== undefined
+        && kind2SymbolKind[kindMap[tokens[3]]] !== undefined) {
+        kind = kind2SymbolKind[kindMap[tokens[3]]];
+      }
+      const posLine = tokens.length > 4
+        ? parseInt(tokens[4].split(':')[1]) // lines:n
+        : parseInt(tokens[2].replace(';"', '')); // nn;"
+      const innerRegex = tokens[2].startsWith('/') // /^  foo$/;"
+        ? tokens[2].slice(2, tokens[2].length - 4)
+        : '';
+      const posCol = (tokens[2].startsWith('/') && innerRegex.indexOf(symbolName) !== -1)
+        ? innerRegex.indexOf(symbolName)
+        : 0;
+      const symbolNameRange = new vscode.Range(posLine - 1, posCol, posLine - 1, posCol + symbolName.length);
 
-        curWsInfo.wsSymbolArray.push(
-          new vscode.SymbolInformation(
-            symbolName,
-            kind,
-            fileNameInTokens,
-            new vscode.Location(fileUriInTokens, symbolNameRange)
-          )
+      curWsInfo.wsSymbolArray.push(
+        new vscode.SymbolInformation(
+          symbolName,
+          kind,
+          fileNameInTokens,
+          new vscode.Location(fileUriInTokens, symbolNameRange)
+        )
+      );
+
+      let workSymbolRanges = curWsInfo.docRangeMap.get(fileUriInTokens.path);
+      if(workSymbolRanges === undefined) {
+        workSymbolRanges = [];
+        curWsInfo.docRangeMap.set(fileUriInTokens.path, workSymbolRanges);
+      }
+      workSymbolRanges.push(symbolNameRange);
+
+      if(fileNameInTokens === relativePath) {
+
+        const currentSymbol = new vscode.DocumentSymbol(
+          symbolName,
+          '',
+          kind,
+          new vscode.Range(posLine - 1, 0, posLine, 10), // 'posLine, 10' has no meaning
+          symbolNameRange
         );
+        currentSymbol.children = [];
 
-        let workSymbolRanges = curWsInfo.docRangeMap.get(fileUriInTokens.path);
-        if(workSymbolRanges === undefined) {
-          workSymbolRanges = [];
-          curWsInfo.docRangeMap.set(fileUriInTokens.path, workSymbolRanges);
-        }
-        workSymbolRanges.push(symbolNameRange);
-
-        if(fileNameInTokens === relativePath) {
-
-          const currentSymbol = new vscode.DocumentSymbol(
-            symbolName,
-            '',
-            kind,
-            new vscode.Range(posLine - 1, 0, posLine, 10), // 'posLine, 10' has no meaning
-            symbolNameRange
-          );
-          currentSymbol.children = [];
-
-          const indentRegex = /^[ ]+/g;
-          if(offSideRule && innerRegex !== '') {
-            const curIndent = indentRegex.exec(innerRegex) !== null
-              ? indentRegex.lastIndex : 0;
-            while(true) {
-              if(parentArray.length === 0) {
-                result.push(currentSymbol);
-                parentArray.push([ symbolName, curIndent ]);
-                break;
-              }
-              const last = parentArray[parentArray.length - 1];
-              let parent: (vscode.DocumentSymbol | undefined) = undefined;
-              for(const ancestor of parentArray) {
-                if(parent === undefined) { // 1st ansector
-                  parent = result.find(docSym => docSym.name === ancestor[0]);
-                }
-                else {
-                  parent = parent.children.find(docSym => docSym.name === ancestor[0]);
-                }
-                if(parent === undefined) { // failed one
-                  break;
-                }
-              }
-              if(parent === undefined) {
-                console.error(`${new Date().toLocaleTimeString()} ERROR: ${symbolName}: at symbol hierarchy spec within tags file`);
-                result.push(currentSymbol);
-                // when failed to get parent symbol obj, there may be better way to go,
-                // but I do not know now.
-                parentArray = [];
-              }
-              else if(last[1] < curIndent) {
-                parent.children.push(currentSymbol);
-                parentArray.push([ symbolName, curIndent ]);
-                break;
-              }
-              else {
-                parent.range = parent.range.with({end: new vscode.Position(posLine - 1, 0)});
-                parentArray.pop();
-              }
-            }
-          }
-          else if(restartTree !== '') {
-            if(restartTree.includes(tokens[3])) {
-              result.push(currentSymbol);
-              currentTreeTop = symbolName;
-            }
-            else if(currentTreeTop === '') {
-              result.push(currentSymbol);
-            }
-            else {
-              const parent = result.find(docSym => docSym.name === currentTreeTop);
-              if(parent !== undefined) {
-                parent.children.push(currentSymbol);
-              }
-              else {
-                result.push(currentSymbol);
-              }
-            }
-          }
-          // case of rst2ctags.py
-          // tokens[5] takes form of 'section:foo|bar...'
-          else if(tokens.length > 5 && tokens[5] !== '' && sro !== '') {
-            let parent: (vscode.DocumentSymbol | undefined) = undefined;
-            for(const ancestor of tokens[5].slice(1 + tokens[5].indexOf(':')).split(sro)) {
-              if(parent === undefined) { // 1st ansector
-                parent = result.find(docSym => docSym.name === ancestor);
-              }
-              else {
-                parent = parent.children.find(docSym => docSym.name === ancestor);
-              }
-              if(parent === undefined) { // failed one
-                break;
-              }
-            }
-            if(parent === undefined) {
-              console.error(`${new Date().toLocaleTimeString()} ERROR: ${symbolName}: at symbol hierarchy spec within tags file`);
-              result.push(currentSymbol);
-            }
-            else {
-              parent.children.push(currentSymbol);
-            }
-          }
-          else {
-            result.push(currentSymbol);
-          }
-        }
-      });
-
-      lines.on('close', () => {
-        if(offSideRule && parentArray.length > 0) {
+        const indentRegex = /^[ ]+/g;
+        if(offSideRule && innerRegex !== '') {
+          const curIndent = indentRegex.exec(innerRegex) !== null
+            ? indentRegex.lastIndex : 0;
           while(true) {
             if(parentArray.length === 0) {
+              result.push(currentSymbol);
+              parentArray.push([ symbolName, curIndent ]);
               break;
             }
             const last = parentArray[parentArray.length - 1];
@@ -418,19 +333,102 @@ const buildDocumentSymbols = (document: vscode.TextDocument): Promise<vscode.Doc
               }
             }
             if(parent === undefined) {
-              console.error(`${new Date().toLocaleTimeString()} ERROR: ${last[0]}: at symbol hierarchy spec within tags file`);
+              console.error(`${new Date().toLocaleTimeString()} ERROR: ${symbolName}: at symbol hierarchy spec within tags file`);
+              result.push(currentSymbol);
+              // when failed to get parent symbol obj, there may be better way to go,
+              // but I do not know now.
               parentArray = [];
             }
+            else if(last[1] < curIndent) {
+              parent.children.push(currentSymbol);
+              parentArray.push([ symbolName, curIndent ]);
+              break;
+            }
             else {
-              parent.range = parent.range.with({end: new vscode.Position(document.lineCount - 1, 0)});
+              parent.range = parent.range.with({end: new vscode.Position(posLine - 1, 0)});
               parentArray.pop();
             }
           }
         }
-        rs.destroy();
-        curWsInfo.docSymbolMap.set(document.uri.path, result);
-        resolve(result);
-      });
-    }
+        else if(restartTree !== '') {
+          if(restartTree.includes(tokens[3])) {
+            result.push(currentSymbol);
+            currentTreeTop = symbolName;
+          }
+          else if(currentTreeTop === '') {
+            result.push(currentSymbol);
+          }
+          else {
+            const parent = result.find(docSym => docSym.name === currentTreeTop);
+            if(parent !== undefined) {
+              parent.children.push(currentSymbol);
+            }
+            else {
+              result.push(currentSymbol);
+            }
+          }
+        }
+        // case of rst2ctags.py
+        // tokens[5] takes form of 'section:foo|bar...'
+        else if(tokens.length > 5 && tokens[5] !== '' && sro !== '') {
+          let parent: (vscode.DocumentSymbol | undefined) = undefined;
+          for(const ancestor of tokens[5].slice(1 + tokens[5].indexOf(':')).split(sro)) {
+            if(parent === undefined) { // 1st ansector
+              parent = result.find(docSym => docSym.name === ancestor);
+            }
+            else {
+              parent = parent.children.find(docSym => docSym.name === ancestor);
+            }
+            if(parent === undefined) { // failed one
+              break;
+            }
+          }
+          if(parent === undefined) {
+            console.error(`${new Date().toLocaleTimeString()} ERROR: ${symbolName}: at symbol hierarchy spec within tags file`);
+            result.push(currentSymbol);
+          }
+          else {
+            parent.children.push(currentSymbol);
+          }
+        }
+        else {
+          result.push(currentSymbol);
+        }
+      }
+    });
+
+    lines.on('close', () => {
+      if(offSideRule && parentArray.length > 0) {
+        while(true) {
+          if(parentArray.length === 0) {
+            break;
+          }
+          const last = parentArray[parentArray.length - 1];
+          let parent: (vscode.DocumentSymbol | undefined) = undefined;
+          for(const ancestor of parentArray) {
+            if(parent === undefined) { // 1st ansector
+              parent = result.find(docSym => docSym.name === ancestor[0]);
+            }
+            else {
+              parent = parent.children.find(docSym => docSym.name === ancestor[0]);
+            }
+            if(parent === undefined) { // failed one
+              break;
+            }
+          }
+          if(parent === undefined) {
+            console.error(`${new Date().toLocaleTimeString()} ERROR: ${last[0]}: at symbol hierarchy spec within tags file`);
+            parentArray = [];
+          }
+          else {
+            parent.range = parent.range.with({end: new vscode.Position(document.lineCount - 1, 0)});
+            parentArray.pop();
+          }
+        }
+      }
+      rs.destroy();
+      curWsInfo.docSymbolMap.set(document.uri.path, result);
+      resolve(result);
+    });
   });
 };
