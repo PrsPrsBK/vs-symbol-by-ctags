@@ -185,6 +185,21 @@ const nextSymbolSub = (textEditor: vscode.TextEditor, prev: boolean) => {
   }
 };
 
+const getCleanConfig = (docUri: vscode.Uri) => {
+  const wk = configArray.find(aConfig => {
+    return undefined !== aConfig.ends.find(nameEnd => docUri.path.endsWith(nameEnd));
+  });
+  return {
+    sro: (wk !== undefined && wk.sro !== undefined)
+      ? wk.sro : '',
+    restartTree: (wk !== undefined && wk.restartTree !== undefined)
+      ? wk.restartTree : '',
+    offSideRule: (wk !== undefined && wk.offSideRule !== undefined)
+      ? wk.offSideRule : false,
+    kindMap: wk !== undefined ? wk.kindMap :{},
+  } as SbcTarget;
+};
+
 // not yet check whether it is necessary to read tags file again or not.
 const buildDocumentSymbols = (document: vscode.TextDocument): Promise<vscode.DocumentSymbol[]> => {
   const wf = vscode.workspace.getWorkspaceFolder(document.uri);
@@ -197,26 +212,11 @@ const buildDocumentSymbols = (document: vscode.TextDocument): Promise<vscode.Doc
   // On win32, you get path such as /x:/path/to/folder
   const sliceFrom = os.platform() === 'win32' ? 1 : 0;
   //'.' means directory of code.exe
-  const docFileName = document.uri.path.replace(/.*\/([^\/]+)/, '$1');
   const docDirPath = document.uri.path.replace(/(.+)\/[^\/]+$/, '$1').slice(sliceFrom);
-  const getCleanConfig = (docUri: vscode.Uri) => {
-    const wk = configArray.find(aConfig => {
-      return undefined !== aConfig.ends.find(nameEnd => docUri.path.endsWith(nameEnd));
-    });
-    return {
-      sro: (wk !== undefined && wk.sro !== undefined)
-        ? wk.sro : '',
-      restartTree: (wk !== undefined && wk.restartTree !== undefined)
-        ? wk.restartTree : '',
-      offSideRule: (wk !== undefined && wk.offSideRule !== undefined)
-        ? wk.offSideRule : false,
-      kindMap: wk !== undefined ? wk.kindMap :{},
-    } as SbcTarget;
-  };
 
   let tagsFileName = tagsFileList.find(f => fs.existsSync(`${docDirPath}/${f}`));
   let tagsDirPath = docDirPath;
-  if(tagsFileName === undefined && wf !== undefined) {
+  if(tagsFileName === undefined) {
     const wfPath = wf.uri.path.slice(sliceFrom);
     while(true) {
       if(tagsDirPath === wfPath || tagsFileName !== undefined) {
@@ -261,51 +261,47 @@ const buildDocumentSymbols = (document: vscode.TextDocument): Promise<vscode.Doc
   allWorkspace.set(wf.uri.path, curWsInfo);
 
   let eachFileResult: vscode.DocumentSymbol[] = [];
+  let currentTreeTop = '';
+  let parentArray: [string, number][] = [];
+  let lastFileNameInTokens = '';
+  let lastFileUriInTokens: vscode.Uri;
+  let wkConfig: SbcTarget;
 
-  return new Promise<vscode.DocumentSymbol[]>((resolve, _reject) => {
-    // filePath within tags file is 'foo/bar/file'
-    const relativePath = tagsDirPath === docDirPath
-      ? docFileName
-      : `${docDirPath.slice(1 + tagsDirPath.length)}/${docFileName}`;
-    const rs = fs.createReadStream(`${tagsDirPath}/${tagsFileName}`);
-    const lines = readline.createInterface(rs);
-    let currentTreeTop = '';
-    let parentArray: [string, number][] = [];
-    let lastFileNameInTokens = '';
-    let lastFileUriInTokens: vscode.Uri;
-    let wkConfig: SbcTarget;
-
-    const endOfSameFile = (docUri: vscode.Uri) => {
-      if(wkConfig.offSideRule && parentArray.length > 0) {
-        while(true) {
-          if(parentArray.length === 0) {
-            break;
-          }
-          const last = parentArray[parentArray.length - 1];
-          let parent: (vscode.DocumentSymbol | undefined) = undefined;
-          for(const ancestor of parentArray) {
-            if(parent === undefined) { // 1st ansector
-              parent = eachFileResult.find(docSym => docSym.name === ancestor[0]);
-            }
-            else {
-              parent = parent.children.find(docSym => docSym.name === ancestor[0]);
-            }
-            if(parent === undefined) { // failed one
-              break;
-            }
-          }
-          if(parent === undefined) {
-            console.error(`${new Date().toLocaleTimeString()} ERROR: ${last[0]}: at symbol hierarchy spec within tags file`);
-            parentArray = [];
+  const endOfSameFile = (docUri: vscode.Uri) => {
+    if(wkConfig.offSideRule && parentArray.length > 0) {
+      while(true) {
+        if(parentArray.length === 0) {
+          break;
+        }
+        const last = parentArray[parentArray.length - 1];
+        let parent: (vscode.DocumentSymbol | undefined) = undefined;
+        for(const ancestor of parentArray) {
+          if(parent === undefined) { // 1st ansector
+            parent = eachFileResult.find(docSym => docSym.name === ancestor[0]);
           }
           else {
-            parent.range = parent.range.with({end: new vscode.Position(document.lineCount - 1, 0)});
-            parentArray.pop();
+            parent = parent.children.find(docSym => docSym.name === ancestor[0]);
+          }
+          if(parent === undefined) { // failed one
+            break;
           }
         }
+        if(parent === undefined) {
+          console.error(`${new Date().toLocaleTimeString()} ERROR: ${last[0]}: at symbol hierarchy spec within tags file`);
+          parentArray = [];
+        }
+        else {
+          parent.range = parent.range.with({end: new vscode.Position(document.lineCount - 1, 0)});
+          parentArray.pop();
+        }
       }
-      curWsInfo.docSymbolMap.set(docUri.path, eachFileResult);
-    };
+    }
+    curWsInfo.docSymbolMap.set(docUri.path, eachFileResult);
+  };
+
+  return new Promise<vscode.DocumentSymbol[]>((resolve, _reject) => {
+    const rs = fs.createReadStream(`${tagsDirPath}/${tagsFileName}`);
+    const lines = readline.createInterface(rs);
 
     lines.on('line', line => {
       if(line.startsWith('!_TAG_')) {
