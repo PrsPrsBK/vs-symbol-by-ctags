@@ -3,6 +3,7 @@
 ## 0.12.0
 
 * 2019-05-27 0.12.0 do not read tags file again when not modified
+* 2019-05-27 0.12.1 fix: work only for first document.
 
 # Release Notes
 
