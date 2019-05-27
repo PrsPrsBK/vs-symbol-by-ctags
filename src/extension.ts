@@ -199,21 +199,20 @@ const buildDocumentSymbols = (document: vscode.TextDocument): Promise<vscode.Doc
   //'.' means directory of code.exe
   const docFileName = document.uri.path.replace(/.*\/([^\/]+)/, '$1');
   const docDirPath = document.uri.path.replace(/(.+)\/[^\/]+$/, '$1').slice(sliceFrom);
-  const config: (SbcTarget | undefined) = configArray.find(aConfig => {
-    return undefined !== aConfig.ends.find(nameEnd => docFileName.endsWith(nameEnd));
-  });
-
-  /**
-   * get each settings for current document.
-   */
-  // sro: Scope Resolution Operator, '::' in C++, '.' in Java.
-  const sro: string = (config !== undefined && config.sro !== undefined)
-    ? config.sro : '';
-  // top of tree
-  const restartTree: string = (config !== undefined && config.restartTree !== undefined)
-    ? config.restartTree : '';
-  const offSideRule: boolean = (config !== undefined && config.offSideRule !== undefined)
-    ? config.offSideRule : false;
+  const getCleanConfig = (docUri: vscode.Uri) => {
+    const wk = configArray.find(aConfig => {
+      return undefined !== aConfig.ends.find(nameEnd => docUri.path.endsWith(nameEnd));
+    });
+    return {
+      sro: (wk !== undefined && wk.sro !== undefined)
+        ? wk.sro : '',
+      restartTree: (wk !== undefined && wk.restartTree !== undefined)
+        ? wk.restartTree : '',
+      offSideRule: (wk !== undefined && wk.offSideRule !== undefined)
+        ? wk.offSideRule : false,
+      kindMap: wk !== undefined ? wk.kindMap :{},
+    } as SbcTarget;
+  };
 
   let tagsFileName = tagsFileList.find(f => fs.existsSync(`${docDirPath}/${f}`));
   let tagsDirPath = docDirPath;
@@ -246,11 +245,12 @@ const buildDocumentSymbols = (document: vscode.TextDocument): Promise<vscode.Doc
       if(liveDocumentSymbols !== undefined) {
         return Promise.resolve(liveDocumentSymbols);
       }
-      // else {
-      //   return Promise.resolve([]); // empty in fact.
-      // }
+      else {
+        return Promise.resolve([]); // empty in fact.
+      }
     }
   }
+  console.log('---- GO ----');
 
   const curWsInfo = {
     mstimeMs: lastMtimeMs,
@@ -267,16 +267,16 @@ const buildDocumentSymbols = (document: vscode.TextDocument): Promise<vscode.Doc
     const relativePath = tagsDirPath === docDirPath
       ? docFileName
       : `${docDirPath.slice(1 + tagsDirPath.length)}/${docFileName}`;
-    const kindMap = config !== undefined ? config.kindMap : undefined;
     const rs = fs.createReadStream(`${tagsDirPath}/${tagsFileName}`);
     const lines = readline.createInterface(rs);
     let currentTreeTop = '';
     let parentArray: [string, number][] = [];
     let lastFileNameInTokens = '';
     let lastFileUriInTokens: vscode.Uri;
+    let wkConfig: SbcTarget;
 
     const endOfSameFile = (docUri: vscode.Uri) => {
-      if(offSideRule && parentArray.length > 0) {
+      if(wkConfig.offSideRule && parentArray.length > 0) {
         while(true) {
           if(parentArray.length === 0) {
             break;
@@ -321,11 +321,23 @@ const buildDocumentSymbols = (document: vscode.TextDocument): Promise<vscode.Doc
       // Maybe it is better to validate path.
       const fileUriInTokens = vscode.Uri.file(`${tagsDirPath}/${fileNameInTokens}`);
 
+      if(lastFileNameInTokens === '') {
+        lastFileNameInTokens = fileNameInTokens;
+        lastFileUriInTokens = fileUriInTokens;
+        wkConfig = getCleanConfig(fileUriInTokens);
+      }
+      else if(fileNameInTokens !== lastFileNameInTokens) {
+        endOfSameFile(lastFileUriInTokens);
+        lastFileNameInTokens = fileNameInTokens;
+        lastFileUriInTokens = fileUriInTokens;
+        wkConfig = getCleanConfig(fileUriInTokens);
+        eachFileResult = [];
+      }
+
       let kind = vscode.SymbolKind.Constructor; // no reason for Constructor
-      if(kindMap !== undefined
-        && kindMap[tokens[3]] !== undefined
-        && kind2SymbolKind[kindMap[tokens[3]]] !== undefined) {
-        kind = kind2SymbolKind[kindMap[tokens[3]]];
+      if(wkConfig.kindMap[tokens[3]] !== undefined
+        && kind2SymbolKind[wkConfig.kindMap[tokens[3]]] !== undefined) {
+        kind = kind2SymbolKind[wkConfig.kindMap[tokens[3]]];
       }
       const posLine = tokens.length > 4
         ? parseInt(tokens[4].split(':')[1]) // lines:n
@@ -354,17 +366,6 @@ const buildDocumentSymbols = (document: vscode.TextDocument): Promise<vscode.Doc
       }
       workSymbolRanges.push(symbolNameRange);
 
-      if(lastFileNameInTokens === '') {
-        lastFileNameInTokens = fileNameInTokens;
-        lastFileUriInTokens = fileUriInTokens;
-      }
-      else if(fileNameInTokens !== lastFileNameInTokens) {
-        endOfSameFile(lastFileUriInTokens);
-        lastFileNameInTokens = fileNameInTokens;
-        lastFileUriInTokens = fileUriInTokens;
-        eachFileResult = [];
-      }
-
       const currentSymbol = new vscode.DocumentSymbol(
         symbolName,
         '',
@@ -375,7 +376,7 @@ const buildDocumentSymbols = (document: vscode.TextDocument): Promise<vscode.Doc
       currentSymbol.children = [];
 
       const indentRegex = /^[ ]+/g;
-      if(offSideRule && innerRegex !== '') {
+      if(wkConfig.offSideRule && innerRegex !== '') {
         const curIndent = indentRegex.exec(innerRegex) !== null
           ? indentRegex.lastIndex : 0;
         while(true) {
@@ -415,8 +416,8 @@ const buildDocumentSymbols = (document: vscode.TextDocument): Promise<vscode.Doc
           }
         }
       }
-      else if(restartTree !== '') {
-        if(restartTree.includes(tokens[3])) {
+      else if(wkConfig.restartTree !== '') {
+        if(wkConfig.restartTree.includes(tokens[3])) {
           eachFileResult.push(currentSymbol);
           currentTreeTop = symbolName;
         }
@@ -435,9 +436,9 @@ const buildDocumentSymbols = (document: vscode.TextDocument): Promise<vscode.Doc
       }
       // case of rst2ctags.py
       // tokens[5] takes form of 'section:foo|bar...'
-      else if(tokens.length > 5 && tokens[5] !== '' && sro !== '') {
+      else if(tokens.length > 5 && tokens[5] !== '' && wkConfig.sro !== '') {
         let parent: (vscode.DocumentSymbol | undefined) = undefined;
-        for(const ancestor of tokens[5].slice(1 + tokens[5].indexOf(':')).split(sro)) {
+        for(const ancestor of tokens[5].slice(1 + tokens[5].indexOf(':')).split(wkConfig.sro)) {
           if(parent === undefined) { // 1st ansector
             parent = eachFileResult.find(docSym => docSym.name === ancestor);
           }
