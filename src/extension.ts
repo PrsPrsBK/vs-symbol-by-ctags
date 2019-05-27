@@ -246,9 +246,9 @@ const buildDocumentSymbols = (document: vscode.TextDocument): Promise<vscode.Doc
       if(liveDocumentSymbols !== undefined) {
         return Promise.resolve(liveDocumentSymbols);
       }
-      else {
-        return Promise.resolve([]); // empty in fact.
-      }
+      // else {
+      //   return Promise.resolve([]); // empty in fact.
+      // }
     }
   }
 
