@@ -260,7 +260,7 @@ const buildDocumentSymbols = (document: vscode.TextDocument): Promise<vscode.Doc
   } as eachWorkspace;
   allWorkspace.set(wf.uri.path, curWsInfo);
 
-  const result: vscode.DocumentSymbol[] = [];
+  let result: vscode.DocumentSymbol[] = [];
 
   return new Promise<vscode.DocumentSymbol[]>((resolve, _reject) => {
     // filePath within tags file is 'foo/bar/file'
@@ -273,7 +273,7 @@ const buildDocumentSymbols = (document: vscode.TextDocument): Promise<vscode.Doc
     let currentTreeTop = '';
     let parentArray: [string, number][] = [];
 
-    const endOfSameFile = () => {
+    const endOfSameFile = (docUri: vscode.Uri) => {
       if(offSideRule && parentArray.length > 0) {
         while(true) {
           if(parentArray.length === 0) {
@@ -302,6 +302,7 @@ const buildDocumentSymbols = (document: vscode.TextDocument): Promise<vscode.Doc
           }
         }
       }
+      curWsInfo.docSymbolMap.set(docUri.path, result);
     };
 
     lines.on('line', line => {
@@ -451,10 +452,9 @@ const buildDocumentSymbols = (document: vscode.TextDocument): Promise<vscode.Doc
     });
 
     lines.on('close', () => {
-      endOfSameFile();
+      endOfSameFile(document.uri);
       rs.destroy();
-      curWsInfo.docSymbolMap.set(document.uri.path, result);
-      resolve(result);
+      resolve(curWsInfo.docSymbolMap.get(document.uri.path));
     });
   });
 };
