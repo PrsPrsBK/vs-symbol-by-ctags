@@ -2,8 +2,8 @@
 
 ## 0.11.0
 
-* 2019-05-26 0.11.0 fix: isolate Symbols by each Workspaces.
-  This is related to `Ctrl+T` search that had unstable behavior about timing of its execution.
+* 2019-05-26 0.11.0 fix: isolate Symbols within each Workspaces.
+  This is related to `Ctrl+T` search that had unstable behavior dependent on the timing of its execution.
 * 2019-05-27 0.11.1 fix: README
 
 # Release Notes
