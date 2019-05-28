@@ -241,7 +241,10 @@ const buildDocumentSymbols = (document: vscode.TextDocument): Promise<vscode.Doc
   // curWsInfo already exists, so let's see.
   if(liveWsInfo !== undefined) {
     if(liveWsInfo.mstimeMs === lastMtimeMs) { // NOT modified!
-      const liveDocumentSymbols = liveWsInfo.docSymbolMap.get(document.uri.path);
+      const workaroundPath = document.uri.path.replace(/^\/([A-Z]):\//, (_match, p1) => {
+        return `/${p1.toLowerCase()}:/`;
+      })
+      const liveDocumentSymbols = liveWsInfo.docSymbolMap.get(workaroundPath);
       if(liveDocumentSymbols !== undefined) {
         return Promise.resolve(liveDocumentSymbols);
       }
