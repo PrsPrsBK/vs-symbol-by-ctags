@@ -8,7 +8,7 @@ and [PonyLang](https://www.ponylang.io/) files.
 So let's rely on ctags' power.
 
 
-How to use
+# How to use
 ====================
 
 This extension works for the cases that you operate on files by 'Open Workspace' or by 'Open Folder', 
@@ -26,7 +26,7 @@ via `Ctrl+Shift+O` (or type `@` after `Ctrl+P`)
 Since 0.10.0, you can workspace-wide symbol search via `Ctrl+T` (case-sensitive and rough).
 
 
-command
+# command
 ====================
 
 Two commands are provided.
@@ -45,7 +45,7 @@ Two commands are provided.
 ```
 
 
-tags file format
+# tags file format
 ====================
 
 Currently, we support two formats, and **need LineNumber**.
@@ -76,8 +76,10 @@ world	foo.rst	/^world$/;"	s	line:6	section:RootSection
 ```
 
 
-Settings
+# Settings
 ====================
+
+## `target`
 
 `target` array has settings-objects for each lauguage,
 and each settings-object has some properties.
@@ -102,6 +104,13 @@ and each settings-object has some properties.
   because apparently we can not cover so much pattern of code-structure.
   But we may get more accurate range of each definition and utilize that for other feature,
   so this experiment happened.
+
+## `fixedTagsFile`
+
+`fixedTagsFile` array has strings. each strings is path to tags file.
+
+
+## example
 
 For workspace following, write to `some.code-workspace` file:
 
@@ -131,6 +140,7 @@ For workspace following, write to `some.code-workspace` file:
     "editor.tabSize": 2, // or so...
 
     "SymbolByCtags":{
+      "fixedTagsFile": [ "X:/path/to/tags" ],
       "target": [
         {
           "name": "reStructuredText(just description)",
