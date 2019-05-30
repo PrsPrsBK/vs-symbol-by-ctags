@@ -101,6 +101,7 @@ type eachWorkspace = {
   wsSymbolArray: vscode.SymbolInformation[],
 };
 let allWorkspace = new Map<string, eachWorkspace>();
+let fixedTagsspace = new Map<string, eachWorkspace>();
 
 const getEachWsInfo = (textEditor: vscode.TextEditor): eachWorkspace | undefined => {
   const curWs = vscode.workspace.getWorkspaceFolder(textEditor.document.uri);
@@ -128,16 +129,28 @@ export class CtagsDocumentSymbolProvider implements vscode.DocumentSymbolProvide
 export class CtagsWorkspaceSymbolProvider implements vscode.WorkspaceSymbolProvider {
   public provideWorkspaceSymbols(
     query: string, _token: vscode.CancellationToken
-  ): vscode.SymbolInformation[] {
+  ): Promise<vscode.SymbolInformation[]> {
     const ate = vscode.window.activeTextEditor;
     if(ate === undefined) {
-      return [];
+      return Promise.resolve([]);
     }
     const eachWsInfo = getEachWsInfo(ate);
-    if(eachWsInfo === undefined || eachWsInfo.wsSymbolArray === undefined) {
-      return [];
-    }
-    return eachWsInfo.wsSymbolArray.filter(si => si.name.includes(query));
+    const activeOne = (eachWsInfo !== undefined && eachWsInfo.wsSymbolArray !== undefined)
+      ? eachWsInfo.wsSymbolArray.filter(si => si.name.includes(query))
+      : [];
+    const waiting: Promise<vscode.SymbolInformation[]>[] = [];
+    fixedTagsspace.forEach(valWs => {
+      waiting.push(new Promise(resolve => {
+        resolve(valWs.wsSymbolArray.filter(si => si.name.includes(query)));
+      }));
+    });
+    return Promise.all(waiting).then(resultFromFixed => {
+      // we do not have flat()
+      return resultFromFixed.reduce((acc, cur) => acc.concat(cur), [])
+        .concat(activeOne);
+    }).catch(_err => {
+      return activeOne;
+    });
   }
 }
 
