@@ -154,38 +154,51 @@ export class CtagsWorkspaceSymbolProvider implements vscode.WorkspaceSymbolProvi
   }
 }
 
-const nextSymbol = (textEditor: vscode.TextEditor, prev = false) => {
-  const eachWsInfo = getEachWsInfo(textEditor);
-  if(eachWsInfo === undefined || eachWsInfo.docSymbolMap === undefined) {
-    return;
+const getParentFixedTagsInfo = (docFilePath: string) => {
+  let result;
+  for(const tagsPath of fixedTagsspace.keys()) {
+    const dir = tagsPath.replace(/(.+)\/[^\/]+$/, '$1');
+    if(docFilePath.startsWith(dir)) {
+      result = fixedTagsspace.get(tagsPath);
+      break;
+    }
   }
-  const docSymArray = eachWsInfo.docSymbolMap.get(textEditor.document.uri.path);
-  if(docSymArray === undefined) {
-    buildDocumentSymbols(textEditor.document).then(_result => {
-      nextSymbolSub(textEditor, prev);
-    });
-  }
-  else {
-    nextSymbolSub(textEditor, prev);
-  }
+  return result;
 };
 
-const nextSymbolSub = (textEditor: vscode.TextEditor, prev: boolean) => {
+const normalizeKeyPath = (filePath: string): string => {
+  return filePath.replace(/^\/([A-Z]):\//, (_match, p1) => {
+    return `/${p1.toLowerCase()}:/`;
+  });
+};
+
+const nextSymbol = (textEditor: vscode.TextEditor, prev = false) => {
+  const docFilePath = normalizeKeyPath(textEditor.document.uri.path);
+  let ws: eachWorkspace;
+  const fixedTagsInfo = getParentFixedTagsInfo(docFilePath);
+  if(fixedTagsInfo !== undefined && fixedTagsInfo.docRangeMap !== undefined) {
+    ws = fixedTagsInfo;
+  }
+  else {
+    const eachWsInfo = getEachWsInfo(textEditor);
+    // illegal state, because this extension began to work and doc was open.
+    if(eachWsInfo === undefined || eachWsInfo.docRangeMap === undefined) {
+      return;
+    }
+    ws = eachWsInfo;
+  }
+  const docRangeArray = ws.docRangeMap.get(docFilePath);
+  nextSymbolSub(textEditor, prev, docRangeArray !== undefined ? docRangeArray : []);
+};
+
+const nextSymbolSub = (textEditor: vscode.TextEditor, prev: boolean, rangeArray: vscode.Range[]) => {
   const cursorPos = textEditor.selection.active;
-  const eachWsInfo = getEachWsInfo(textEditor);
-  if(eachWsInfo === undefined || eachWsInfo.docRangeMap === undefined) {
-    return;
-  }
-  let symbolRanges = eachWsInfo.docRangeMap.get(textEditor.document.uri.path);
-  if(symbolRanges === undefined) {
-    return;
-  }
-  let nextSymbolRange = symbolRanges.find(nthSymbol => cursorPos.isBefore(nthSymbol.start));
+  let nextSymbolRange = rangeArray.find(nthSymbol => cursorPos.isBefore(nthSymbol.start));
   if(prev) {
     nextSymbolRange = undefined;
-    for(let i = symbolRanges.length - 1;i > -1;i--) {
-      if(cursorPos.isAfter(symbolRanges[i].end)) {
-        nextSymbolRange = symbolRanges[i];
+    for(let i = rangeArray.length - 1;i > -1;i--) {
+      if(cursorPos.isAfter(rangeArray[i].end)) {
+        nextSymbolRange = rangeArray[i];
         break;
       }
     }
