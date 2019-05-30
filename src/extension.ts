@@ -24,6 +24,8 @@ export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(prevSymbolCommand);
 
   const config = vscode.workspace.getConfiguration('SymbolByCtags');
+  const ftf = config.get<string[]>('fixedTagsFile');
+  fixedTagsPathArray = ftf !== undefined ? ftf : [];
   const documentFilterArray: vscode.DocumentFilter[] = [];
   const targetArray = config.get<SbcTarget[]>('target');
   if(targetArray !== undefined) {
@@ -92,6 +94,7 @@ const kind2SymbolKind: {[key: string]: vscode.SymbolKind} = {
 };
 
 const tagsFileList = [ 'tags', '.tags', 'TAGS' ];
+let fixedTagsPathArray: string[] = [];
 let configArray: Array<SbcTarget> = [];
 
 type eachWorkspace = {
@@ -153,6 +156,18 @@ export class CtagsWorkspaceSymbolProvider implements vscode.WorkspaceSymbolProvi
     });
   }
 }
+
+const getParentFixedTagsPath = (docFilePath: string) => {
+  let result;
+  for(const tagsPath of fixedTagsPathArray) {
+    const dir = tagsPath.replace(/(.+)\/[^\/]+$/, '$1');
+    if(docFilePath.startsWith(dir)) {
+      result = tagsPath;
+      break;
+    }
+  }
+  return result;
+};
 
 const getParentFixedTagsInfo = (docFilePath: string) => {
   let result;
@@ -235,21 +250,35 @@ const buildDocumentSymbols = (document: vscode.TextDocument): Promise<vscode.Doc
   else {
     console.log(`wf: ${wf.uri.path}`);
   }
+  const docFilePath = normalizeKeyPath(document.uri.path);
+  if(getParentFixedTagsPath(docFilePath) !== undefined) {
+    const fixedTagsInfo = getParentFixedTagsInfo(docFilePath);
+    if(fixedTagsInfo !== undefined && fixedTagsInfo.docSymbolMap !== undefined) {
+      // anyway Typescript requires workaround variable.
+      const workaroundVar = fixedTagsInfo.docSymbolMap.get(docFilePath);
+      if(workaroundVar !== undefined) {
+        return Promise.resolve(workaroundVar);
+      }
+      else {
+        return Promise.reject([]);
+      }
+    }
+  }
+
   // On win32, you get path such as /x:/path/to/folder
   const sliceFrom = os.platform() === 'win32' ? 1 : 0;
-  //'.' means directory of code.exe
-  const docDirPath = document.uri.path.replace(/(.+)\/[^\/]+$/, '$1').slice(sliceFrom);
+  const docDirFsPath = document.uri.path.replace(/(.+)\/[^\/]+$/, '$1').slice(sliceFrom);
 
-  let tagsFileName = tagsFileList.find(f => fs.existsSync(`${docDirPath}/${f}`));
-  let tagsDirPath = docDirPath;
+  let tagsFileName = tagsFileList.find(f => fs.existsSync(`${docDirFsPath}/${f}`));
+  let tagsDirFsPath = docDirFsPath;
   if(tagsFileName === undefined) {
-    const wfPath = wf.uri.path.slice(sliceFrom);
+    const wfFsPath = wf.uri.path.slice(sliceFrom);
     while(true) {
-      if(tagsDirPath === wfPath || tagsFileName !== undefined) {
+      if(tagsDirFsPath === wfFsPath || tagsFileName !== undefined) {
         break;
       }
-      tagsDirPath = tagsDirPath.replace(/(.+)\/[^\/]+$/, '$1');
-      tagsFileName = tagsFileList.find(f => fs.existsSync(`${tagsDirPath}/${f}`));
+      tagsDirFsPath = tagsDirFsPath.replace(/(.+)\/[^\/]+$/, '$1');
+      tagsFileName = tagsFileList.find(f => fs.existsSync(`${tagsDirFsPath}/${f}`));
     }
   }
   if(tagsFileName === undefined) {
@@ -257,7 +286,7 @@ const buildDocumentSymbols = (document: vscode.TextDocument): Promise<vscode.Doc
     return Promise.reject([]);
   }
 
-  const lastMtimeMs = fs.statSync(`${tagsDirPath}/${tagsFileName}`).mtimeMs;
+  const lastMtimeMs = fs.statSync(`${tagsDirFsPath}/${tagsFileName}`).mtimeMs;
   console.log(JSON.stringify(lastMtimeMs)); //1558774393762.249
 
   // liveWsInfo is just a workaround.
@@ -329,7 +358,7 @@ const buildDocumentSymbols = (document: vscode.TextDocument): Promise<vscode.Doc
   };
 
   return new Promise<vscode.DocumentSymbol[]>((resolve, _reject) => {
-    const rs = fs.createReadStream(`${tagsDirPath}/${tagsFileName}`);
+    const rs = fs.createReadStream(`${tagsDirFsPath}/${tagsFileName}`);
     const lines = readline.createInterface(rs);
 
     lines.on('line', line => {
@@ -344,7 +373,7 @@ const buildDocumentSymbols = (document: vscode.TextDocument): Promise<vscode.Doc
       // On Windows, spec within tags file may have paths separated by backslash.
       const fileNameInTokens = tokens[1].replace(/\\/g, '/');
       // Maybe it is better to validate path.
-      const fileUriInTokens = vscode.Uri.file(`${tagsDirPath}/${fileNameInTokens}`);
+      const fileUriInTokens = vscode.Uri.file(`${tagsDirFsPath}/${fileNameInTokens}`);
 
       if(lastFileNameInTokens === '') {
         lastFileNameInTokens = fileNameInTokens;
