@@ -27,6 +27,7 @@ export function activate(context: vscode.ExtensionContext) {
   const ftf = config.get<string[]>('fixedTagsFile');
   fixedTagsPathArray = ftf !== undefined ? ftf : [];
   fixedTagsPathArray.forEach(tagsPath => {
+    // how we wait this, or not
     buildFixedTagsInfo(tagsPath);
   });
   const documentFilterArray: vscode.DocumentFilter[] = [];
