@@ -241,13 +241,6 @@ const getCleanConfig = (docUri: vscode.Uri) => {
 
 // not yet check whether it is necessary to read tags file again or not.
 const getDocumentSymbols = (document: vscode.TextDocument): Promise<vscode.DocumentSymbol[]> => {
-  const wf = vscode.workspace.getWorkspaceFolder(document.uri);
-  if(wf === undefined) {
-    return Promise.reject([]);
-  }
-  else {
-    console.log(`wf: ${wf.uri.path}`);
-  }
   // On win32, you get path such as /x:/path/to/folder
   const docFilePath = normalizePathAsKey(document.uri.path);
   if(getParentFixedTagsPath(docFilePath) !== undefined) {
@@ -264,6 +257,13 @@ const getDocumentSymbols = (document: vscode.TextDocument): Promise<vscode.Docum
     }
   }
 
+  const wf = vscode.workspace.getWorkspaceFolder(document.uri);
+  if(wf === undefined) {
+    return Promise.reject([]);
+  }
+  else {
+    console.log(`wf: ${wf.uri.path}`);
+  }
   const docDirFsPath = docFilePath.replace(/(.+)\/[^\/]+$/, '$1');
   let tagsFileName = tagsFileList.find(f => fs.existsSync(`${docDirFsPath}/${f}`));
   let tagsDirFsPath = docDirFsPath;
