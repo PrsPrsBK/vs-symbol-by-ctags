@@ -52,8 +52,8 @@ export function activate(context: vscode.ExtensionContext) {
         );
       }
     }
-  }).catch(_err => {
-      vscode.window.showInformationMessage('ERROR: on load fixedTagsFile');
+  }).catch(err => {
+      vscode.window.showInformationMessage(`fixedTagsFile: ${err}`);
   });
 }
 
@@ -179,14 +179,14 @@ const getParentFixedTagsInfo = (docFilePath: string) => {
   return result;
 };
 
-const normalizeKeyPath = (filePath: string): string => {
-  return filePath.replace(/^(\/)?([A-Z]):\//, (_match, p1, p2) => {
-    return `${p1 !== undefined ? p1 : ''}${p2.toLowerCase()}:/`;
+const normalizePathAsKey = (filePath: string): string => {
+  return filePath.replace(/^\/?([A-Z]){1}:\//, (_match, p1) => {
+    return `${p1.toLowerCase()}:/`;
   });
 };
 
 const nextSymbol = (textEditor: vscode.TextEditor, prev = false) => {
-  const docFilePath = normalizeKeyPath(textEditor.document.uri.path);
+  const docFilePath = normalizePathAsKey(textEditor.document.uri.path);
   let ws: eachWorkspace;
   const fixedTagsInfo = getParentFixedTagsInfo(docFilePath);
   if(fixedTagsInfo !== undefined && fixedTagsInfo.docRangeMap !== undefined) {
@@ -248,7 +248,7 @@ const getDocumentSymbols = (document: vscode.TextDocument): Promise<vscode.Docum
   else {
     console.log(`wf: ${wf.uri.path}`);
   }
-  const docFilePath = normalizeKeyPath(document.uri.path);
+  const docFilePath = normalizePathAsKey(document.uri.path);
   if(getParentFixedTagsPath(docFilePath) !== undefined) {
     console.log('---- INSIDE FIXEDTAGS ----');
     const fixedTagsInfo = getParentFixedTagsInfo(docFilePath);
@@ -523,9 +523,12 @@ const getDocumentSymbols = (document: vscode.TextDocument): Promise<vscode.Docum
   });
 };
 
-const buildFixedTagsInfo = (tagsPath: string) => {
+const buildFixedTagsInfo = (pathInConfig: string) => {
+  const tagsPath = normalizePathAsKey(pathInConfig);
+  if(fs.existsSync(tagsPath) === false) {
+    return Promise.reject(`NOT EXIST ${tagsPath}`);
+  }
   const lastMtimeMs = fs.statSync(`${tagsPath}`).mtimeMs;
-  console.log(JSON.stringify(lastMtimeMs)); //1558774393762.249
   const fixedTagsInfo = {
     mstimeMs: lastMtimeMs,
     docRangeMap: new Map<string, vscode.Range[]>(),
@@ -538,13 +541,7 @@ const buildFixedTagsInfo = (tagsPath: string) => {
 };
 
 const buildSub = (tagsPath: string, curWsInfo: eachWorkspace) => {
-  let tagsDirFsPath = tagsPath.replace(/(.+)\/[^\/]+$/, '$1');
-  if(os.platform() === 'win32') {
-    tagsDirFsPath = normalizeKeyPath(tagsDirFsPath);
-    if(tagsDirFsPath.startsWith('/')) {
-      tagsDirFsPath = tagsDirFsPath.slice(1);
-    }
-  }
+  const tagsDirFsPath = tagsPath.replace(/(.+)\/[^\/]+$/, '$1');
   let eachFileResult: vscode.DocumentSymbol[] = [];
   let currentTreeTop = '';
   let parentArray: [string, number][] = [];
