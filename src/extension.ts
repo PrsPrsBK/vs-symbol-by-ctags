@@ -158,9 +158,9 @@ export class CtagsWorkspaceSymbolProvider implements vscode.WorkspaceSymbolProvi
 const getParentFixedTagsPath = (docFilePath: string) => {
   let result;
   for(const tagsPath of fixedTagsPathArray) {
-    const dir = tagsPath.replace(/(.+)\/[^\/]+$/, '$1');
+    const dir = normalizePathAsKey(tagsPath).replace(/(.+)\/[^\/]+$/, '$1');
     if(docFilePath.startsWith(dir)) {
-      result = tagsPath;
+      result = normalizePathAsKey(tagsPath);
       break;
     }
   }
