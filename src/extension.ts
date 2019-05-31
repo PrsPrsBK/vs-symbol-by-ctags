@@ -4,7 +4,6 @@ import readline from 'readline';
 import os from 'os';
 
 export function activate(context: vscode.ExtensionContext) {
-  console.log('"symbol-by-ctags" is now active!');
 
   const activateCommand = vscode.commands.registerCommand('extension.symbolByCtags', () => {
     vscode.window.showInformationMessage('activated: Symbol by Ctags');
@@ -26,34 +25,36 @@ export function activate(context: vscode.ExtensionContext) {
   const config = vscode.workspace.getConfiguration('SymbolByCtags');
   const ftf = config.get<string[]>('fixedTagsFile');
   fixedTagsPathArray = ftf !== undefined ? ftf : [];
-  fixedTagsPathArray.forEach(tagsPath => {
-    // how we wait this, or not
-    buildFixedTagsInfo(tagsPath);
+  const waitingFtf = fixedTagsPathArray.map(val => buildFixedTagsInfo(val));
+  Promise.all(waitingFtf).then(_result => {
+    console.log('success ftf');
+    const documentFilterArray: vscode.DocumentFilter[] = [];
+    const targetArray = config.get<SbcTarget[]>('target');
+    if(targetArray !== undefined) {
+      for(const tgt of targetArray) {
+        documentFilterArray.push({
+          pattern: tgt.glob,
+          scheme: 'file',
+        });
+      }
+      if(documentFilterArray.length > 0) {
+        configArray = targetArray;
+        context.subscriptions.push(
+          vscode.languages.registerDocumentSymbolProvider(
+            documentFilterArray,
+            new CtagsDocumentSymbolProvider()
+          )
+        );
+        context.subscriptions.push(
+          vscode.languages.registerWorkspaceSymbolProvider(
+            new CtagsWorkspaceSymbolProvider()
+          )
+        );
+      }
+    }
+  }).catch(_err => {
+      vscode.window.showInformationMessage('ERROR: on load fixedTagsFile');
   });
-  const documentFilterArray: vscode.DocumentFilter[] = [];
-  const targetArray = config.get<SbcTarget[]>('target');
-  if(targetArray !== undefined) {
-    for(const tgt of targetArray) {
-      documentFilterArray.push({
-        pattern: tgt.glob,
-        scheme: 'file',
-      });
-    }
-    if(documentFilterArray.length > 0) {
-      configArray = targetArray;
-      context.subscriptions.push(
-        vscode.languages.registerDocumentSymbolProvider(
-          documentFilterArray,
-          new CtagsDocumentSymbolProvider()
-        )
-      );
-      context.subscriptions.push(
-        vscode.languages.registerWorkspaceSymbolProvider(
-          new CtagsWorkspaceSymbolProvider()
-        )
-      );
-    }
-  }
 }
 
 export function deactivate() { }
