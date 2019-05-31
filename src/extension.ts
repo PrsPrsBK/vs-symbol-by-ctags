@@ -179,8 +179,8 @@ const getParentFixedTagsInfo = (docFilePath: string) => {
 };
 
 const normalizeKeyPath = (filePath: string): string => {
-  return filePath.replace(/^\/([A-Z]):\//, (_match, p1) => {
-    return `/${p1.toLowerCase()}:/`;
+  return filePath.replace(/^(\/)?([A-Z]):\//, (_match, p1, p2) => {
+    return `${p1 !== undefined ? p1 : ''}${p2.toLowerCase()}:/`;
   });
 };
 
@@ -249,6 +249,7 @@ const getDocumentSymbols = (document: vscode.TextDocument): Promise<vscode.Docum
   }
   const docFilePath = normalizeKeyPath(document.uri.path);
   if(getParentFixedTagsPath(docFilePath) !== undefined) {
+    console.log('---- INSIDE FIXEDTAGS ----');
     const fixedTagsInfo = getParentFixedTagsInfo(docFilePath);
     if(fixedTagsInfo !== undefined && fixedTagsInfo.docSymbolMap !== undefined) {
       // anyway Typescript requires workaround variable.
@@ -536,8 +537,13 @@ const buildFixedTagsInfo = (tagsPath: string) => {
 };
 
 const buildSub = (tagsPath: string, curWsInfo: eachWorkspace) => {
-  const sliceFrom = os.platform() === 'win32' ? 1 : 0;
-  const tagsDirFsPath = tagsPath.replace(/(.+)\/[^\/]+$/, '$1').slice(sliceFrom);
+  let tagsDirFsPath = tagsPath.replace(/(.+)\/[^\/]+$/, '$1');
+  if(os.platform() === 'win32') {
+    tagsDirFsPath = normalizeKeyPath(tagsDirFsPath);
+    if(tagsDirFsPath.startsWith('/')) {
+      tagsDirFsPath = tagsDirFsPath.slice(1);
+    }
+  }
   let eachFileResult: vscode.DocumentSymbol[] = [];
   let currentTreeTop = '';
   let parentArray: [string, number][] = [];
