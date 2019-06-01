@@ -262,10 +262,10 @@ const getDocumentSymbols = (document: vscode.TextDocument): Promise<vscode.Docum
   const docDirFsPath = docFilePath.replace(/(.+)\/[^\/]+$/, '$1');
   let tagsFileName = tagsFileList.find(f => fs.existsSync(`${docDirFsPath}/${f}`));
   let tagsDirFsPath = docDirFsPath;
-  const wfFsPath = normalizePathAsKey(wf.uri.path);
+  const wfPathAsKey = normalizePathAsKey(wf.uri.path);
   if(tagsFileName === undefined) {
     while(true) {
-      if(tagsDirFsPath === wfFsPath || tagsFileName !== undefined) {
+      if(tagsDirFsPath === wfPathAsKey || tagsFileName !== undefined) {
         break;
       }
       tagsDirFsPath = tagsDirFsPath.replace(/(.+)\/[^\/]+$/, '$1');
@@ -279,17 +279,12 @@ const getDocumentSymbols = (document: vscode.TextDocument): Promise<vscode.Docum
   }
 
   const tagsPath = `${tagsDirFsPath}/${tagsFileName}`;
-  if(fs.existsSync(tagsPath) === false) {
-    // return Promise.reject(`NOT EXIST ${tagsPath}`);
-    console.log(`NOT EXIST ${tagsPath}`);
-    return Promise.reject([]);
-  }
   const lastMtimeMs = fs.statSync(`${tagsDirFsPath}/${tagsFileName}`).mtimeMs;
 
   // liveWsInfo is just a workaround.
   // I do not know why tsc ignores '=== undefined' and re-assigning to curWsInfo,
   // and eventually results in failure to compile.
-  let liveWsInfo = allWorkspace.get(wfFsPath);
+  let liveWsInfo = allWorkspace.get(wfPathAsKey);
   // curWsInfo already exists, so let's see.
   if(liveWsInfo !== undefined) {
     if(liveWsInfo.mstimeMs === lastMtimeMs) { // NOT modified!
@@ -302,7 +297,6 @@ const getDocumentSymbols = (document: vscode.TextDocument): Promise<vscode.Docum
       }
     }
   }
-  console.log('---- GO ----');
 
   const curWsInfo = {
     mstimeMs: lastMtimeMs,
@@ -310,7 +304,7 @@ const getDocumentSymbols = (document: vscode.TextDocument): Promise<vscode.Docum
     docSymbolMap: new Map<string, vscode.DocumentSymbol[]>(),
     wsSymbolArray: [],
   } as eachWorkspace;
-  allWorkspace.set(wfFsPath, curWsInfo);
+  allWorkspace.set(wfPathAsKey, curWsInfo);
 
   return new Promise<vscode.DocumentSymbol[]>((resolve, _reject) => {
     buildSub(tagsPath, curWsInfo).then(_result => {
@@ -320,25 +314,25 @@ const getDocumentSymbols = (document: vscode.TextDocument): Promise<vscode.Docum
 };
 
 const buildFixedTagsInfo = (pathInConfig: string) => {
-  const tagsPath = normalizePathAsKey(pathInConfig);
-  if(fs.existsSync(tagsPath) === false) {
-    return Promise.reject(`NOT EXIST ${tagsPath}`);
+  const tagsPathAsKey = normalizePathAsKey(pathInConfig);
+  if(fs.existsSync(tagsPathAsKey) === false) {
+    return Promise.reject(`NOT EXIST ${tagsPathAsKey}`);
   }
-  const lastMtimeMs = fs.statSync(`${tagsPath}`).mtimeMs;
+  const lastMtimeMs = fs.statSync(`${tagsPathAsKey}`).mtimeMs;
   const fixedTagsInfo = {
     mstimeMs: lastMtimeMs,
     docRangeMap: new Map<string, vscode.Range[]>(),
     docSymbolMap: new Map<string, vscode.DocumentSymbol[]>(),
     wsSymbolArray: [],
   } as eachWorkspace;
-  fixedTagsspace.set(tagsPath, fixedTagsInfo);
+  fixedTagsspace.set(tagsPathAsKey, fixedTagsInfo);
 
-  return buildSub(tagsPath, fixedTagsInfo);
+  return buildSub(tagsPathAsKey, fixedTagsInfo);
 };
 
 const buildSub = (tagsPath: string, curWsInfo: eachWorkspace) => {
   const tagsDirFsPath = tagsPath.replace(/(.+)\/[^\/]+$/, '$1');
-  let eachFileResult: vscode.DocumentSymbol[] = [];
+  let eachFileSymbols: vscode.DocumentSymbol[] = [];
   let currentTreeTop = '';
   let parentArray: [string, number][] = [];
   let lastFileNameInTokens = '';
@@ -356,7 +350,7 @@ const buildSub = (tagsPath: string, curWsInfo: eachWorkspace) => {
         let parent: (vscode.DocumentSymbol | undefined) = undefined;
         for(const ancestor of parentArray) {
           if(parent === undefined) { // 1st ansector
-            parent = eachFileResult.find(docSym => docSym.name === ancestor[0]);
+            parent = eachFileSymbols.find(docSym => docSym.name === ancestor[0]);
           }
           else {
             parent = parent.children.find(docSym => docSym.name === ancestor[0]);
@@ -378,7 +372,7 @@ const buildSub = (tagsPath: string, curWsInfo: eachWorkspace) => {
         }
       }
     }
-    curWsInfo.docSymbolMap.set(normalizePathAsKey(docUri.path), eachFileResult);
+    curWsInfo.docSymbolMap.set(normalizePathAsKey(docUri.path), eachFileSymbols);
   };
   const rs = fs.createReadStream(`${tagsPath}`);
   const lines = readline.createInterface(rs);
@@ -410,7 +404,7 @@ const buildSub = (tagsPath: string, curWsInfo: eachWorkspace) => {
         lastFileUriInTokens = fileUriInTokens;
         lastLineNum = 0
         wkConfig = getCleanConfig(fileUriInTokens);
-        eachFileResult = [];
+        eachFileSymbols = [];
       }
 
       let kind = vscode.SymbolKind.Constructor; // no reason for Constructor
@@ -461,7 +455,7 @@ const buildSub = (tagsPath: string, curWsInfo: eachWorkspace) => {
           ? indentRegex.lastIndex : 0;
         while(true) {
           if(parentArray.length === 0) {
-            eachFileResult.push(currentSymbol);
+            eachFileSymbols.push(currentSymbol);
             parentArray.push([ symbolName, curIndent ]);
             break;
           }
@@ -469,7 +463,7 @@ const buildSub = (tagsPath: string, curWsInfo: eachWorkspace) => {
           let parent: (vscode.DocumentSymbol | undefined) = undefined;
           for(const ancestor of parentArray) {
             if(parent === undefined) { // 1st ansector
-              parent = eachFileResult.find(docSym => docSym.name === ancestor[0]);
+              parent = eachFileSymbols.find(docSym => docSym.name === ancestor[0]);
             }
             else {
               parent = parent.children.find(docSym => docSym.name === ancestor[0]);
@@ -480,7 +474,7 @@ const buildSub = (tagsPath: string, curWsInfo: eachWorkspace) => {
           }
           if(parent === undefined) {
             console.error(`${new Date().toLocaleTimeString()} ERROR: ${symbolName}: at symbol hierarchy spec within tags file`);
-            eachFileResult.push(currentSymbol);
+            eachFileSymbols.push(currentSymbol);
             // when failed to get parent symbol obj, there may be better way to go,
             // but I do not know now.
             parentArray = [];
@@ -498,19 +492,19 @@ const buildSub = (tagsPath: string, curWsInfo: eachWorkspace) => {
       }
       else if(wkConfig.restartTree !== '') {
         if(wkConfig.restartTree.includes(tokens[3])) {
-          eachFileResult.push(currentSymbol);
+          eachFileSymbols.push(currentSymbol);
           currentTreeTop = symbolName;
         }
         else if(currentTreeTop === '') {
-          eachFileResult.push(currentSymbol);
+          eachFileSymbols.push(currentSymbol);
         }
         else {
-          const parent = eachFileResult.find(docSym => docSym.name === currentTreeTop);
+          const parent = eachFileSymbols.find(docSym => docSym.name === currentTreeTop);
           if(parent !== undefined) {
             parent.children.push(currentSymbol);
           }
           else {
-            eachFileResult.push(currentSymbol);
+            eachFileSymbols.push(currentSymbol);
           }
         }
       }
@@ -520,7 +514,7 @@ const buildSub = (tagsPath: string, curWsInfo: eachWorkspace) => {
         let parent: (vscode.DocumentSymbol | undefined) = undefined;
         for(const ancestor of tokens[5].slice(1 + tokens[5].indexOf(':')).split(wkConfig.sro)) {
           if(parent === undefined) { // 1st ansector
-            parent = eachFileResult.find(docSym => docSym.name === ancestor);
+            parent = eachFileSymbols.find(docSym => docSym.name === ancestor);
           }
           else {
             parent = parent.children.find(docSym => docSym.name === ancestor);
@@ -531,14 +525,14 @@ const buildSub = (tagsPath: string, curWsInfo: eachWorkspace) => {
         }
         if(parent === undefined) {
           console.error(`${new Date().toLocaleTimeString()} ERROR: ${symbolName}: at symbol hierarchy spec within tags file`);
-          eachFileResult.push(currentSymbol);
+          eachFileSymbols.push(currentSymbol);
         }
         else {
           parent.children.push(currentSymbol);
         }
       }
       else {
-        eachFileResult.push(currentSymbol);
+        eachFileSymbols.push(currentSymbol);
       }
     });
 
