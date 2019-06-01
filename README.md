@@ -218,3 +218,5 @@ Maybe all things are easy to be changed, excuse me.
 * do not generate ctags file.
 * do not see the change of ctags file instantly. If re-open the file, changes will be effected.
 * do not watch the change of settings file. If re-open workspace, changes will be effected.
+* If any document is not yet opened at all, `Ctrl+T` will not work.
+* As for tags file of `fixedTagsFile` settings, no update to tags file will not be work after loaded once.
