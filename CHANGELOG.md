@@ -2,7 +2,7 @@
 
 ## 0.13.0
 
-* 2019-05-28 0.13.0 new setting: `fixedTagsFile` array.
+* 2019-06-01 0.13.0 new setting: `fixedTagsFile` array.
   You can refer some tags files constantly from your opened Workspace or Folder.
 
 # Release Notes
