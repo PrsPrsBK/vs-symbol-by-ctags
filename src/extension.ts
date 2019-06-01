@@ -439,10 +439,10 @@ const buildSub = (tagsPath: string, curWsInfo: eachWorkspace) => {
         )
       );
 
-      let workSymbolRanges = curWsInfo.docRangeMap.get(fileUriInTokens.path);
+      let workSymbolRanges = curWsInfo.docRangeMap.get(normalizePathAsKey(fileUriInTokens.path));
       if(workSymbolRanges === undefined) {
         workSymbolRanges = [];
-        curWsInfo.docRangeMap.set(fileUriInTokens.path, workSymbolRanges);
+        curWsInfo.docRangeMap.set(normalizePathAsKey(fileUriInTokens.path), workSymbolRanges);
       }
       workSymbolRanges.push(symbolNameRange);
 
