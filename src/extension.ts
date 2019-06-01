@@ -1,7 +1,6 @@
 import * as vscode from 'vscode';
 import fs from 'fs';
 import readline from 'readline';
-import os from 'os';
 
 export function activate(context: vscode.ExtensionContext) {
 
@@ -27,7 +26,6 @@ export function activate(context: vscode.ExtensionContext) {
   fixedTagsPathArray = ftf !== undefined ? ftf : [];
   const waitingFtf = fixedTagsPathArray.map(val => buildFixedTagsInfo(val));
   Promise.all(waitingFtf).then(_result => {
-    console.log('success ftf');
     const documentFilterArray: vscode.DocumentFilter[] = [];
     const targetArray = config.get<SbcTarget[]>('target');
     if(targetArray !== undefined) {
@@ -108,16 +106,8 @@ type eachWorkspace = {
   docSymbolMap: Map<string, vscode.DocumentSymbol[]>,
   wsSymbolArray: vscode.SymbolInformation[],
 };
-let allWorkspace = new Map<string, eachWorkspace>();
-let fixedTagsspace = new Map<string, eachWorkspace>();
-
-const getEachWsInfo = (textEditor: vscode.TextEditor): eachWorkspace | undefined => {
-  const curWs = vscode.workspace.getWorkspaceFolder(textEditor.document.uri);
-  if(curWs === undefined) {
-    return undefined;
-  }
-  return allWorkspace.get(curWs.uri.path);
-};
+const allWorkspace = new Map<string, eachWorkspace>();
+const fixedTagsspace = new Map<string, eachWorkspace>();
 
 export class CtagsDocumentSymbolProvider implements vscode.DocumentSymbolProvider {
   public provideDocumentSymbols(
@@ -146,7 +136,6 @@ export class CtagsWorkspaceSymbolProvider implements vscode.WorkspaceSymbolProvi
       }));
     });
     return Promise.all(waiting).then(resultFromFixed => {
-      // we do not have flat()
       return resultFromFixed.reduce((acc, cur) => acc.concat(cur), [])
         .concat(activeOne);
     }).catch(_err => {
@@ -155,11 +144,20 @@ export class CtagsWorkspaceSymbolProvider implements vscode.WorkspaceSymbolProvi
   }
 }
 
-const getParentFixedTagsPath = (docFilePath: string) => {
+const getEachWsInfo = (textEditor: vscode.TextEditor): eachWorkspace | undefined => {
+  const curWs = vscode.workspace.getWorkspaceFolder(textEditor.document.uri);
+  if(curWs === undefined) {
+    return undefined;
+  }
+  return allWorkspace.get(normalizePathAsKey(curWs.uri.path));
+};
+
+const getParentFixedTagsPath = (docFilePathAsKey: string) => {
   let result;
   for(const tagsPath of fixedTagsPathArray) {
+    // user's inputs need to be normalize.
     const dir = normalizePathAsKey(tagsPath).replace(/(.+)\/[^\/]+$/, '$1');
-    if(docFilePath.startsWith(dir)) {
+    if(docFilePathAsKey.startsWith(dir)) {
       result = normalizePathAsKey(tagsPath);
       break;
     }
@@ -167,11 +165,12 @@ const getParentFixedTagsPath = (docFilePath: string) => {
   return result;
 };
 
-const getParentFixedTagsInfo = (docFilePath: string) => {
+const getParentFixedTagsInfo = (docFilePathAsKey: string) => {
   let result;
   for(const tagsPath of fixedTagsspace.keys()) {
+    // already normalized.
     const dir = tagsPath.replace(/(.+)\/[^\/]+$/, '$1');
-    if(docFilePath.startsWith(dir)) {
+    if(docFilePathAsKey.startsWith(dir)) {
       result = fixedTagsspace.get(tagsPath);
       break;
     }
@@ -194,7 +193,7 @@ const nextSymbol = (textEditor: vscode.TextEditor, prev = false) => {
   }
   else {
     const eachWsInfo = getEachWsInfo(textEditor);
-    // illegal state, because this extension began to work and doc was open.
+    // illegal state, because this extension already began to work and doc was open.
     if(eachWsInfo === undefined || eachWsInfo.docRangeMap === undefined) {
       return;
     }
@@ -244,7 +243,6 @@ const getDocumentSymbols = (document: vscode.TextDocument): Promise<vscode.Docum
   // On win32, you get path such as /x:/path/to/folder
   const docFilePath = normalizePathAsKey(document.uri.path);
   if(getParentFixedTagsPath(docFilePath) !== undefined) {
-    console.log('---- INSIDE FIXEDTAGS ----');
     const fixedTagsInfo = getParentFixedTagsInfo(docFilePath);
     if(fixedTagsInfo !== undefined && fixedTagsInfo.docSymbolMap !== undefined) {
       const workaroundVar = fixedTagsInfo.docSymbolMap.get(docFilePath);
@@ -260,9 +258,6 @@ const getDocumentSymbols = (document: vscode.TextDocument): Promise<vscode.Docum
   const wf = vscode.workspace.getWorkspaceFolder(document.uri);
   if(wf === undefined) {
     return Promise.reject([]);
-  }
-  else {
-    console.log(`wf: ${wf.uri.path}`);
   }
   const docDirFsPath = docFilePath.replace(/(.+)\/[^\/]+$/, '$1');
   let tagsFileName = tagsFileList.find(f => fs.existsSync(`${docDirFsPath}/${f}`));
@@ -384,9 +379,6 @@ const buildSub = (tagsPath: string, curWsInfo: eachWorkspace) => {
       }
     }
     curWsInfo.docSymbolMap.set(normalizePathAsKey(docUri.path), eachFileResult);
-    if(docUri.path.includes('ponyc/') === false) {
-      console.log(`  END ${lastLineNum} ${docUri.path}`);
-    }
   };
   const rs = fs.createReadStream(`${tagsPath}`);
   const lines = readline.createInterface(rs);
@@ -404,9 +396,6 @@ const buildSub = (tagsPath: string, curWsInfo: eachWorkspace) => {
       // On Windows, spec within tags file may have paths separated by backslash.
       const fileNameInTokens = tokens[1].replace(/\\/g, '/');
       // Maybe it is better to validate path.
-      // if(tagsDirFsPath.includes('ponyc') === false) {
-      //   console.log(`${tagsDirFsPath}/${fileNameInTokens}`);
-      // }
       const fileUriInTokens = vscode.Uri.file(`${tagsDirFsPath}/${fileNameInTokens}`);
 
       if(lastFileNameInTokens === '') {
@@ -433,9 +422,6 @@ const buildSub = (tagsPath: string, curWsInfo: eachWorkspace) => {
         ? parseInt(tokens[4].split(':')[1]) // lines:n
         : parseInt(tokens[2].replace(';"', '')); // nn;"
       lastLineNum = posLine;
-      if(tagsDirFsPath.includes('ponyc') === false) {
-        console.log(`${fileNameInTokens} ${lastLineNum}`);
-      }
       const innerRegex = tokens[2].startsWith('/') // /^  foo$/;"
         ? tokens[2].slice(2, tokens[2].length - 4)
         : '';
