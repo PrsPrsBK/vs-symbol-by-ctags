@@ -36,6 +36,15 @@
     "configuration": {
       "title": "Symbol by Ctags",
       "properties": {
+        "SymbolByCtags.fixedTagsFile": {
+          "type": "array",
+          "items": [
+            {
+              "type": "string"
+            }
+          ],
+          "markdownDescription": "An array of fixed reference to tags files."
+        },
         "SymbolByCtags.target": {
           "type": "array",
           "items": [
