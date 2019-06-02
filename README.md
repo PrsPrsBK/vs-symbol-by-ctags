@@ -81,9 +81,12 @@ world	foo.rst	/^world$/;"	s	line:6	section:RootSection
 and each settings-object has some properties.
 
 * `name`: string. some description.
-* `glob`: Glob string. `**/*.rst` or so.
-  [reference for Glob](https://code.visualstudio.com/api/references/vscode-api#GlobPattern)
-* `ends`: array of string used to match settings with files. [ `.rst` ] or so.
+* `glob`: Glob string used to get VS Code to show symbols within Outline panel for files.
+  `"**/*.rst"` or so.
+  [reference for Glob](https://code.visualstudio.com/api/references/vscode-api#GlobPattern).
+* `ends`: array of string used to match settings with files. [ `".rst"` ] or so.
+  This property may look to be duplication of `glob`,
+  and in future, may become deprecated.
 * `kindMap`: object. Mapping ctag's `kind` (1 length string) to VS Code's `SymbolKind`.
   [reference for SymbolKind](https://code.visualstudio.com/api/references/vscode-api#SymbolKind)
 * `restartTree`: string composed of Type of Symbol(each has 1 length).
@@ -104,6 +107,8 @@ and each settings-object has some properties.
 ## `fixedTagsFile`
 
 `fixedTagsFile` array has strings. each strings is path to tags file.
+After `Symbol by Ctags` command, these tags files will be referenced in whole workspace, 
+beyond each workspace-folders.
 
 
 ## example
@@ -193,7 +198,6 @@ In the case that you use 'Open as folder', write to `someFolder/.vscode/settings
 # TODO
 
 * [author want] working without tags file.
-* [author want] 'fixed reference' to tags file of some basic repository.
 * [author maybe want] completion. but `sro` may not be simple, e.g. `.` and `.>` and so.
 
 
