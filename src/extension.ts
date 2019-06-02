@@ -128,6 +128,7 @@ const getLatestFixedTagsSpace = (): Promise<typeof fixedTagsspace> => {
     const lastMtimeMs = fs.statSync(`${tagsPathAsKey}`).mtimeMs;
     const ftInfo = fixedTagsspace.get(tagsPathAsKey);
     if(ftInfo === undefined || lastMtimeMs !== ftInfo.mstimeMs) {
+      console.log(`update ${tagsPathAsKey}`);
       waiting.push(buildFixedTagsInfo(pathInConfig));
     }
   });
@@ -274,64 +275,68 @@ const getDocumentSymbols = (document: vscode.TextDocument): Promise<vscode.Docum
         return Promise.reject([]);
       }
     }
-  }
-
-  const wf = vscode.workspace.getWorkspaceFolder(document.uri);
-  if(wf === undefined) {
-    return Promise.reject([]);
-  }
-  const docDirFsPath = docFilePath.replace(/(.+)\/[^\/]+$/, '$1');
-  let tagsFileName = tagsFileList.find(f => fs.existsSync(`${docDirFsPath}/${f}`));
-  let tagsDirFsPath = docDirFsPath;
-  const wfPathAsKey = normalizePathAsKey(wf.uri.path);
-  if(tagsFileName === undefined) {
-    while(true) {
-      if(tagsDirFsPath === wfPathAsKey || tagsFileName !== undefined) {
-        break;
-      }
-      tagsDirFsPath = tagsDirFsPath.replace(/(.+)\/[^\/]+$/, '$1');
-      tagsFileName = tagsFileList.find(f => fs.existsSync(`${tagsDirFsPath}/${f}`));
+    else {
+      return Promise.reject([]);
     }
   }
-  if(tagsFileName === undefined) {
-    // notification may be over-reaction
-    console.error('tags file not found.');
-    return Promise.reject([]);
-  }
-
-  const tagsPath = `${tagsDirFsPath}/${tagsFileName}`;
-  const lastMtimeMs = fs.statSync(`${tagsDirFsPath}/${tagsFileName}`).mtimeMs;
-
-  // liveWsInfo is just a workaround.
-  // I do not know why tsc ignores '=== undefined' and re-assigning to curWsInfo,
-  // and eventually results in failure to compile.
-  let liveWsInfo = allWorkspace.get(wfPathAsKey);
-  // curWsInfo already exists, so let's see.
-  if(liveWsInfo !== undefined) {
-    if(liveWsInfo.mstimeMs === lastMtimeMs) { // NOT modified!
-      const liveDocumentSymbols = liveWsInfo.docSymbolMap.get(docFilePath);
-      if(liveDocumentSymbols !== undefined) {
-        return Promise.resolve(liveDocumentSymbols);
-      }
-      else {
-        return Promise.resolve([]); // empty in fact.
+  else {
+    const wf = vscode.workspace.getWorkspaceFolder(document.uri);
+    if(wf === undefined) {
+      return Promise.reject([]);
+    }
+    const docDirFsPath = docFilePath.replace(/(.+)\/[^\/]+$/, '$1');
+    let tagsFileName = tagsFileList.find(f => fs.existsSync(`${docDirFsPath}/${f}`));
+    let tagsDirFsPath = docDirFsPath;
+    const wfPathAsKey = normalizePathAsKey(wf.uri.path);
+    if(tagsFileName === undefined) {
+      while(true) {
+        if(tagsDirFsPath === wfPathAsKey || tagsFileName !== undefined) {
+          break;
+        }
+        tagsDirFsPath = tagsDirFsPath.replace(/(.+)\/[^\/]+$/, '$1');
+        tagsFileName = tagsFileList.find(f => fs.existsSync(`${tagsDirFsPath}/${f}`));
       }
     }
-  }
+    if(tagsFileName === undefined) {
+      // notification may be over-reaction
+      console.error('tags file not found.');
+      return Promise.reject([]);
+    }
 
-  const curWsInfo = {
-    mstimeMs: lastMtimeMs,
-    docRangeMap: new Map<string, vscode.Range[]>(),
-    docSymbolMap: new Map<string, vscode.DocumentSymbol[]>(),
-    wsSymbolArray: [],
-  } as eachWorkspace;
-  allWorkspace.set(wfPathAsKey, curWsInfo);
+    const tagsPath = `${tagsDirFsPath}/${tagsFileName}`;
+    const lastMtimeMs = fs.statSync(`${tagsDirFsPath}/${tagsFileName}`).mtimeMs;
 
-  return new Promise<vscode.DocumentSymbol[]>((resolve, _reject) => {
-    buildSub(tagsPath, curWsInfo).then(_result => {
-      resolve(curWsInfo.docSymbolMap.get(docFilePath));
+    // liveWsInfo is just a workaround.
+    // I do not know why tsc ignores '=== undefined' and re-assigning to curWsInfo,
+    // and eventually results in failure to compile.
+    let liveWsInfo = allWorkspace.get(wfPathAsKey);
+    // curWsInfo already exists, so let's see.
+    if(liveWsInfo !== undefined) {
+      if(liveWsInfo.mstimeMs === lastMtimeMs) { // NOT modified!
+        const liveDocumentSymbols = liveWsInfo.docSymbolMap.get(docFilePath);
+        if(liveDocumentSymbols !== undefined) {
+          return Promise.resolve(liveDocumentSymbols);
+        }
+        else {
+          return Promise.resolve([]); // empty in fact.
+        }
+      }
+    }
+
+    const curWsInfo = {
+      mstimeMs: lastMtimeMs,
+      docRangeMap: new Map<string, vscode.Range[]>(),
+      docSymbolMap: new Map<string, vscode.DocumentSymbol[]>(),
+      wsSymbolArray: [],
+    } as eachWorkspace;
+    allWorkspace.set(wfPathAsKey, curWsInfo);
+
+    return new Promise<vscode.DocumentSymbol[]>((resolve, _reject) => {
+      buildSub(tagsPath, curWsInfo).then(_result => {
+        resolve(curWsInfo.docSymbolMap.get(docFilePath));
+      });
     });
-  });
+  }
 };
 
 const buildFixedTagsInfo = (pathInConfig: string) => {
