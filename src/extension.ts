@@ -51,7 +51,8 @@ export function activate(context: vscode.ExtensionContext) {
       }
     }
   }).catch(err => {
-      vscode.window.showInformationMessage(`fixedTagsFile: ${err}`);
+      vscode.window.showInformationMessage(`Fail at activation: fixedTagsFile: ${err}`);
+      // Should work for things except fixedTags?
   });
 }
 
@@ -117,26 +118,6 @@ export class CtagsDocumentSymbolProvider implements vscode.DocumentSymbolProvide
   }
 };
 
-const getLatestFixedTagsSpace = (): Promise<typeof fixedTagsspace> => {
-  const waiting: ReturnType<typeof buildFixedTagsInfo>[] = [];
-  fixedTagsPathArray.forEach(pathInConfig => {
-    const tagsPathAsKey = normalizePathAsKey(pathInConfig);
-    if(fs.existsSync(`${tagsPathAsKey}`) === false) {
-      vscode.window.showInformationMessage(`fixedTagsFile: NOT EXIST`);
-      return;
-    }
-    const lastMtimeMs = fs.statSync(`${tagsPathAsKey}`).mtimeMs;
-    const ftInfo = fixedTagsspace.get(tagsPathAsKey);
-    if(ftInfo === undefined || lastMtimeMs !== ftInfo.mstimeMs) {
-      console.log(`update ${tagsPathAsKey}`);
-      waiting.push(buildFixedTagsInfo(pathInConfig));
-    }
-  });
-  return Promise.all(waiting).then(_result => {
-    return fixedTagsspace;
-  });
-};
-
 export class CtagsWorkspaceSymbolProvider implements vscode.WorkspaceSymbolProvider {
   public provideWorkspaceSymbols(
     query: string, _token: vscode.CancellationToken
@@ -149,9 +130,9 @@ export class CtagsWorkspaceSymbolProvider implements vscode.WorkspaceSymbolProvi
     const activeOne = (eachWsInfo !== undefined && eachWsInfo.wsSymbolArray !== undefined)
       ? eachWsInfo.wsSymbolArray.filter(si => si.name.includes(query))
       : [];
-    return getLatestFixedTagsSpace().then(fts => {
+    return getLatestFixedTagsSpace().then(ftSpace => {
       const waiting: Promise<vscode.SymbolInformation[]>[] = [];
-      fts.forEach(valWs => {
+      ftSpace.forEach(valWs => {
         waiting.push(new Promise(resolve => {
           resolve(valWs.wsSymbolArray.filter(si => si.name.includes(query)));
         }));
@@ -165,6 +146,29 @@ export class CtagsWorkspaceSymbolProvider implements vscode.WorkspaceSymbolProvi
     });
   }
 }
+
+const getLatestFixedTagsSpace = (): Promise<typeof fixedTagsspace> => {
+  const waiting: ReturnType<typeof buildFixedTagsInfo>[] = [];
+  fixedTagsPathArray.forEach(pathInConfig => {
+    const tagsPathAsKey = normalizePathAsKey(pathInConfig);
+    if(fs.existsSync(`${tagsPathAsKey}`) === false) {
+      vscode.window.showInformationMessage(`fixedTagsFile: NOT EXIST ${tagsPathAsKey}`);
+      // Should Map.clear() ?
+      return;
+    }
+    const lastMtimeMs = fs.statSync(`${tagsPathAsKey}`).mtimeMs;
+    const ftInfo = fixedTagsspace.get(tagsPathAsKey);
+    if(ftInfo === undefined || lastMtimeMs !== ftInfo.mstimeMs) {
+      console.log(`update ${tagsPathAsKey}`);
+      waiting.push(buildFixedTagsInfo(pathInConfig));
+    }
+  });
+  return Promise.all(waiting).then(_result => {
+    return fixedTagsspace;
+  }).catch(_err => {
+    return fixedTagsspace; // maybe not reachable
+  });
+};
 
 const getEachWsInfo = (textEditor: vscode.TextEditor): eachWorkspace | undefined => {
   const curWs = vscode.workspace.getWorkspaceFolder(textEditor.document.uri);
@@ -188,16 +192,20 @@ const getParentFixedTagsPath = (docFilePathAsKey: string) => {
 };
 
 const getParentFixedTagsInfo = (docFilePathAsKey: string) => {
-  let result;
-  for(const tagsPath of fixedTagsspace.keys()) {
-    // already normalized.
-    const dir = tagsPath.replace(/(.+)\/[^\/]+$/, '$1');
-    if(docFilePathAsKey.startsWith(dir)) {
-      result = fixedTagsspace.get(tagsPath);
-      break;
+  return getLatestFixedTagsSpace().then(ftSpace => {
+    let result;
+    for(const tagsPathAsKey of ftSpace.keys()) {
+      // already normalized.
+      const dir = tagsPathAsKey.replace(/(.+)\/[^\/]+$/, '$1');
+      if(docFilePathAsKey.startsWith(dir)) {
+        result = ftSpace.get(tagsPathAsKey);
+        break;
+      }
     }
-  }
-  return result;
+    return result;
+  }).catch(_err => {
+    return undefined;
+  });
 };
 
 const normalizePathAsKey = (filePath: string): string => {
@@ -209,9 +217,14 @@ const normalizePathAsKey = (filePath: string): string => {
 const nextSymbol = (textEditor: vscode.TextEditor, prev = false) => {
   const docFilePath = normalizePathAsKey(textEditor.document.uri.path);
   let ws: eachWorkspace;
-  const fixedTagsInfo = getParentFixedTagsInfo(docFilePath);
-  if(fixedTagsInfo !== undefined && fixedTagsInfo.docRangeMap !== undefined) {
-    ws = fixedTagsInfo;
+  if(getParentFixedTagsPath(docFilePath) !== undefined) {
+    getParentFixedTagsInfo(docFilePath).then(ftInfo => {
+      if(ftInfo !== undefined && ftInfo.docRangeMap !== undefined) {
+        ws = ftInfo;
+        const docRangeArray = ws.docRangeMap.get(docFilePath);
+        nextSymbolSub(textEditor, prev, docRangeArray !== undefined ? docRangeArray : []);
+      }
+    });
   }
   else {
     const eachWsInfo = getEachWsInfo(textEditor);
@@ -220,9 +233,9 @@ const nextSymbol = (textEditor: vscode.TextEditor, prev = false) => {
       return;
     }
     ws = eachWsInfo;
+    const docRangeArray = ws.docRangeMap.get(docFilePath);
+    nextSymbolSub(textEditor, prev, docRangeArray !== undefined ? docRangeArray : []);
   }
-  const docRangeArray = ws.docRangeMap.get(docFilePath);
-  nextSymbolSub(textEditor, prev, docRangeArray !== undefined ? docRangeArray : []);
 };
 
 const nextSymbolSub = (textEditor: vscode.TextEditor, prev: boolean, rangeArray: vscode.Range[]) => {
@@ -265,19 +278,13 @@ const getDocumentSymbols = (document: vscode.TextDocument): Promise<vscode.Docum
   // On win32, you get path such as /x:/path/to/folder
   const docFilePath = normalizePathAsKey(document.uri.path);
   if(getParentFixedTagsPath(docFilePath) !== undefined) {
-    const fixedTagsInfo = getParentFixedTagsInfo(docFilePath);
-    if(fixedTagsInfo !== undefined && fixedTagsInfo.docSymbolMap !== undefined) {
-      const workaroundVar = fixedTagsInfo.docSymbolMap.get(docFilePath);
-      if(workaroundVar !== undefined) {
-        return Promise.resolve(workaroundVar);
+    return getParentFixedTagsInfo(docFilePath).then(ftInfo => {
+      let workaroundVar;
+      if(ftInfo !== undefined && ftInfo.docSymbolMap !== undefined) {
+        workaroundVar = ftInfo.docSymbolMap.get(docFilePath);
       }
-      else {
-        return Promise.reject([]);
-      }
-    }
-    else {
-      return Promise.reject([]);
-    }
+      return workaroundVar !== undefined ? workaroundVar : [];
+    });
   }
   else {
     const wf = vscode.workspace.getWorkspaceFolder(document.uri);
