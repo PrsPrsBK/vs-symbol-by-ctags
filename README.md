@@ -9,7 +9,6 @@ So let's rely on ctags' power.
 
 
 # How to use
-====================
 
 This extension works for the cases that you operate on files by 'Open Workspace' or by 'Open Folder', 
 and does not work for the case of 'Open File'.
@@ -27,7 +26,6 @@ Since 0.10.0, you can workspace-wide symbol search via `Ctrl+T` (case-sensitive 
 
 
 # command
-====================
 
 Two commands are provided.
 
@@ -46,7 +44,6 @@ Two commands are provided.
 
 
 # tags file format
-====================
 
 Currently, we support two formats, and **need LineNumber**.
 
@@ -77,7 +74,6 @@ world	foo.rst	/^world$/;"	s	line:6	section:RootSection
 
 
 # Settings
-====================
 
 ## `target`
 
@@ -194,16 +190,14 @@ In the case that you use 'Open as folder', write to `someFolder/.vscode/settings
 ```
 
 
-TODO
-====================
+# TODO
 
 * [author want] working without tags file.
 * [author want] 'fixed reference' to tags file of some basic repository.
 * [author maybe want] completion. but `sro` may not be simple, e.g. `.` and `.>` and so.
 
 
-Known Issues
-====================
+# Known Issues
 
 In short, the capability is limited very much, and under dogfooding.
 Maybe all things are easy to be changed, excuse me.
