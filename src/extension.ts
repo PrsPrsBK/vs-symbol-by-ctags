@@ -22,21 +22,23 @@ export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(prevSymbolCommand);
 
   const config = vscode.workspace.getConfiguration('SymbolByCtags');
+  const uglyWorkaroundVar = config.get<SbcTarget[]>('target');
+  if(uglyWorkaroundVar !== undefined) {
+    configArray = uglyWorkaroundVar;
+  }
   const ftf = config.get<string[]>('fixedTagsFile');
   fixedTagsPathArray = ftf !== undefined ? ftf : [];
   const waitingFtf = fixedTagsPathArray.map(val => buildFixedTagsInfo(val));
   Promise.all(waitingFtf).then(_result => {
     const documentFilterArray: vscode.DocumentFilter[] = [];
-    const targetArray = config.get<SbcTarget[]>('target');
-    if(targetArray !== undefined) {
-      for(const tgt of targetArray) {
+    if(configArray !== undefined) {
+      for(const tgt of configArray) {
         documentFilterArray.push({
           pattern: tgt.glob,
           scheme: 'file',
         });
       }
       if(documentFilterArray.length > 0) {
-        configArray = targetArray;
         context.subscriptions.push(
           vscode.languages.registerDocumentSymbolProvider(
             documentFilterArray,
