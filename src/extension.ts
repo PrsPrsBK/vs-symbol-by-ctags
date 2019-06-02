@@ -117,6 +117,25 @@ export class CtagsDocumentSymbolProvider implements vscode.DocumentSymbolProvide
   }
 };
 
+const getLatestFixedTagsSpace = (): Promise<typeof fixedTagsspace> => {
+  const waiting: ReturnType<typeof buildFixedTagsInfo>[] = [];
+  fixedTagsPathArray.forEach(pathInConfig => {
+    const tagsPathAsKey = normalizePathAsKey(pathInConfig);
+    if(fs.existsSync(`${tagsPathAsKey}`) === false) {
+      vscode.window.showInformationMessage(`fixedTagsFile: NOT EXIST`);
+      return;
+    }
+    const lastMtimeMs = fs.statSync(`${tagsPathAsKey}`).mtimeMs;
+    const ftInfo = fixedTagsspace.get(tagsPathAsKey);
+    if(ftInfo === undefined || lastMtimeMs !== ftInfo.mstimeMs) {
+      waiting.push(buildFixedTagsInfo(pathInConfig));
+    }
+  });
+  return Promise.all(waiting).then(_result => {
+    return fixedTagsspace;
+  });
+};
+
 export class CtagsWorkspaceSymbolProvider implements vscode.WorkspaceSymbolProvider {
   public provideWorkspaceSymbols(
     query: string, _token: vscode.CancellationToken
@@ -129,17 +148,19 @@ export class CtagsWorkspaceSymbolProvider implements vscode.WorkspaceSymbolProvi
     const activeOne = (eachWsInfo !== undefined && eachWsInfo.wsSymbolArray !== undefined)
       ? eachWsInfo.wsSymbolArray.filter(si => si.name.includes(query))
       : [];
-    const waiting: Promise<vscode.SymbolInformation[]>[] = [];
-    fixedTagsspace.forEach(valWs => {
-      waiting.push(new Promise(resolve => {
-        resolve(valWs.wsSymbolArray.filter(si => si.name.includes(query)));
-      }));
-    });
-    return Promise.all(waiting).then(resultFromFixed => {
-      return resultFromFixed.reduce((acc, cur) => acc.concat(cur), [])
-        .concat(activeOne);
-    }).catch(_err => {
-      return activeOne;
+    return getLatestFixedTagsSpace().then(fts => {
+      const waiting: Promise<vscode.SymbolInformation[]>[] = [];
+      fts.forEach(valWs => {
+        waiting.push(new Promise(resolve => {
+          resolve(valWs.wsSymbolArray.filter(si => si.name.includes(query)));
+        }));
+      });
+      return Promise.all(waiting).then(resultFromFixed => {
+        return resultFromFixed.reduce((acc, cur) => acc.concat(cur), [])
+          .concat(activeOne);
+      }).catch(_err => {
+        return activeOne;
+      });
     });
   }
 }
