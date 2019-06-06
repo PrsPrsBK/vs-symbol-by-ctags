@@ -84,6 +84,7 @@
   "engines": {
     "vscode": "^1.33.0"
   },
+  "icon": "./sbc-128.png",
   "keywords": [
     "symbol",
     "ctags",
