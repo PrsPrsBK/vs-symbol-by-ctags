@@ -91,6 +91,7 @@
     "outline",
     "reStructuredText"
   ],
+  "markdown": "github",
   "scripts": {
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./"
