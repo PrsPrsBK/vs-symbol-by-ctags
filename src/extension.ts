@@ -171,6 +171,9 @@ const updateForDoc = (textEditor: vscode.TextDocument) => {
   proc.on('close', code => {
     console.log(`close ${code}`);
   });
+  proc.on('error', err => {
+    vscode.window.showInformationMessage(`on exec ctags: ${err}`);
+  });
 };
 
 const getLatestFixedTagsSpace = (): Promise<typeof fixedTagsspace> => {
