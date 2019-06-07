@@ -2,6 +2,8 @@ import * as vscode from 'vscode';
 import fs from 'fs';
 import readline from 'readline';
 
+let onSaveSubscription: vscode.Disposable;
+
 export function activate(context: vscode.ExtensionContext) {
 
   const activateCommand = vscode.commands.registerCommand('extension.symbolByCtags', () => {
@@ -52,13 +54,18 @@ export function activate(context: vscode.ExtensionContext) {
         );
       }
     }
+    onSaveSubscription = vscode.workspace.onDidSaveTextDocument(textDocument => {
+      console.log('saved');
+    });
   }).catch(err => {
       vscode.window.showInformationMessage(`Fail at activation: fixedTagsFile: ${err}`);
       // Should work for things except fixedTags?
   });
 }
 
-export function deactivate() { }
+export function deactivate() {
+  onSaveSubscription.dispose();
+}
 
 type SbcTarget = {
   name: string;
