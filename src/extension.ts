@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import fs from 'fs';
+import { spawn } from 'child_process';
 import readline from 'readline';
 
 let onSaveSubscription: vscode.Disposable;
@@ -54,9 +55,7 @@ export function activate(context: vscode.ExtensionContext) {
         );
       }
     }
-    onSaveSubscription = vscode.workspace.onDidSaveTextDocument(textDocument => {
-      console.log('saved');
-    });
+    onSaveSubscription = vscode.workspace.onDidSaveTextDocument(updateForDoc);
   }).catch(err => {
       vscode.window.showInformationMessage(`Fail at activation: fixedTagsFile: ${err}`);
       // Should work for things except fixedTags?
@@ -155,6 +154,24 @@ export class CtagsWorkspaceSymbolProvider implements vscode.WorkspaceSymbolProvi
     });
   }
 }
+
+const updateForDoc = (textEditor: vscode.TextDocument) => {
+  console.log(`saved! ${textEditor.uri.path}`);
+  const proc = spawn('ctags', [
+    '-f -',
+    '--sort=no',
+    '--fields=nksaSmtf',
+    "--exclude='.*'",
+    '--languages=pony',
+    normalizePathAsKey(textEditor.uri.path),
+  ]);
+  proc.stdout.on('data', data => {
+    console.log(`${data}`);
+  });
+  proc.on('close', code => {
+    console.log(`close ${code}`);
+  });
+};
 
 const getLatestFixedTagsSpace = (): Promise<typeof fixedTagsspace> => {
   const waiting: ReturnType<typeof buildFixedTagsInfo>[] = [];
