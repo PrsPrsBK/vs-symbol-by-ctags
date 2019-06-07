@@ -74,6 +74,8 @@ type SbcTarget = {
   sro: string;
   restartTree: string;
   offSideRule: boolean;
+  updateOnSave: boolean;
+  updateProc: string[];
 };
 
 const kind2SymbolKind: {[key: string]: vscode.SymbolKind} = {
@@ -156,17 +158,28 @@ export class CtagsWorkspaceSymbolProvider implements vscode.WorkspaceSymbolProvi
 }
 
 const updateForDoc = (textEditor: vscode.TextDocument) => {
-  console.log(`saved! ${textEditor.uri.path}`);
-  const proc = spawn('ctags', [
-    '-f -',
-    '--sort=no',
-    '--fields=nksaSmtf',
-    "--exclude='.*'",
-    '--languages=pony',
-    normalizePathAsKey(textEditor.uri.path),
-  ]);
+  const wk = configArray.find(aConfig => {
+    return undefined !== aConfig.ends.find(nameEnd => textEditor.uri.path.endsWith(nameEnd));
+  });
+  const procConfig = {
+    updateOnSave: (wk !== undefined && wk.updateOnSave !== undefined)
+      ? wk.updateOnSave : false,
+    updateProc: wk !== undefined ? wk.updateProc : [],
+  } as SbcTarget;
+  if(procConfig.updateOnSave !== true) {
+    return;
+  }
+  else if(procConfig.updateProc.length === 0) {
+    vscode.window.showInformationMessage('before exec ctags: too few args');
+    return;
+  }
+  const proc = spawn(
+    procConfig.updateProc[0], procConfig.updateProc.slice(1).concat(normalizePathAsKey(textEditor.uri.path))
+  );
+  proc.stdout.setEncoding('utf8');
+
   proc.stdout.on('data', data => {
-    console.log(`${data}`);
+    console.log(`${typeof data} ${data}`);
   });
   proc.on('close', code => {
     console.log(`close ${code}`);

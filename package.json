@@ -72,6 +72,13 @@
                 },
                 "offSideRule": {
                   "type": "boolean"
+                },
+                "updateOnSave": {
+                  "type": "boolean"
+                },
+                "updateProc": {
+                  "type": "array",
+                  "items": "string"
                 }
               }
             }
