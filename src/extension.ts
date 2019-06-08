@@ -608,21 +608,36 @@ const getTagsFileContent = (tagsPath: string): Promise<string[]> => {
 
 const updateForDoc = (document: vscode.TextDocument) => {
   const docFilePath = normalizePathAsKey(document.uri.path);
-  const wf = vscode.workspace.getWorkspaceFolder(document.uri);
-  if(wf === undefined) {
-    return;
+  if(getParentFixedTagsPath(docFilePath) !== undefined) {
+    return getParentFixedTagsInfo(docFilePath).then(ftInfo => {
+      if(ftInfo === undefined) {
+        return;
+      }
+      ftInfo.docRangeMap.set(docFilePath, []);
+      ftInfo.docSymbolMap.set(docFilePath, []);
+      ftInfo.wsSymbolArray = ftInfo.wsSymbolArray.filter(si => si.containerName !== docFilePath);
+      getTagsLineFromExec(docFilePath).then(allLines => {
+        buildSub('', ftInfo, allLines);
+      });
+    });
   }
-  const wfPathAsKey = normalizePathAsKey(wf.uri.path);
-  const curWsInfo = allWorkspace.get(wfPathAsKey);
-  if(curWsInfo === undefined) {
-    return;
+  else {
+    const wf = vscode.workspace.getWorkspaceFolder(document.uri);
+    if(wf === undefined) {
+      return;
+    }
+    const wfPathAsKey = normalizePathAsKey(wf.uri.path);
+    const curWsInfo = allWorkspace.get(wfPathAsKey);
+    if(curWsInfo === undefined) {
+      return;
+    }
+    curWsInfo.docRangeMap.set(docFilePath, []);
+    curWsInfo.docSymbolMap.set(docFilePath, []);
+    curWsInfo.wsSymbolArray = curWsInfo.wsSymbolArray.filter(si => si.containerName !== docFilePath);
+    getTagsLineFromExec(docFilePath).then(allLines => {
+      buildSub('', curWsInfo, allLines);
+    });
   }
-  curWsInfo.docRangeMap.set(docFilePath, []);
-  curWsInfo.docSymbolMap.set(docFilePath, []);
-  curWsInfo.wsSymbolArray = curWsInfo.wsSymbolArray.filter(si => si.containerName !== docFilePath);
-  getTagsLineFromExec(docFilePath).then(allLines => {
-    buildSub('', curWsInfo, allLines);
-  });
 };
 
 const getTagsLineFromExec = (docPath: string): Promise<string[]> => {
