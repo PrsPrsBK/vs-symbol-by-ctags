@@ -167,46 +167,6 @@ const updateForDoc = (textEditor: vscode.TextDocument) => {
   });
 };
 
-const getTagsLineFromExec = (docPath: string): Promise<string[]> => {
-  const wk = configArray.find(aConfig => {
-    return undefined !== aConfig.ends.find(nameEnd => docPath.endsWith(nameEnd));
-  });
-  const procConfig = {
-    updateOnSave: (wk !== undefined && wk.updateOnSave !== undefined)
-      ? wk.updateOnSave : false,
-    updateProc: wk !== undefined ? wk.updateProc : [],
-  } as SbcTarget;
-  // currently no-reject
-  if(procConfig.updateOnSave !== true) {
-    return Promise.resolve([]);
-  }
-  else if(procConfig.updateProc.length === 0) {
-    vscode.window.showInformationMessage('before exec ctags: too few args');
-    return Promise.resolve([]);
-  }
-  const proc = spawn(
-    procConfig.updateProc[0], procConfig.updateProc.slice(1).concat(docPath)
-  );
-  proc.stdout.setEncoding('utf8');
-
-  return new Promise<string[]>((resolve, _reject) => {
-    let wkStack = '';
-    proc.stdout.on('data', data => {
-      console.log(`${typeof data} ${data}`);
-      wkStack += data;
-    });
-    proc.on('close', code => {
-      console.log(`close ${code}`);
-      // you can not rely on os.EOL
-      const eol = wkStack.includes('\r\n') ? '\r\n' : '\n';
-      resolve(wkStack.split(eol));
-    });
-    proc.on('error', err => {
-      vscode.window.showInformationMessage(`on exec ctags: ${err}`);
-    });
-  });
-};
-
 const getLatestFixedTagsSpace = (): Promise<typeof fixedTagsspace> => {
   const waiting: ReturnType<typeof buildFixedTagsInfo>[] = [];
   fixedTagsPathArray.forEach(pathInConfig => {
@@ -470,8 +430,14 @@ const buildSub = (tagsPath: string, curWsInfo: eachWorkspace) => {
 
   return getTagsFileContent(tagsPath).then(allLines => {
     for(const line of allLines) {
+      if(line.startsWith('!_TAG_')) {
+        continue;
+      }
       // currently read all lines. if 'not sorted by symbolname', to stop readline is better.
       const tokens = line.split('\t');
+      if(tokens.length < 4) {
+        continue;
+      }
 
       const symbolName = tokens[0];
       // On Windows, spec within tags file may have paths separated by backslash.
@@ -634,13 +600,50 @@ const getTagsFileContent = (tagsPath: string): Promise<string[]> => {
 
   return new Promise<string[]>((resolve, _reject) => {
     lines.on('line', line => {
-      if(line.startsWith('!_TAG_') === false) {
-        allLines.push(line);
-      }
+      allLines.push(line);
     });
     lines.on('close', () => {
       rs.destroy();
       resolve(allLines);
+    });
+  });
+};
+
+const getTagsLineFromExec = (docPath: string): Promise<string[]> => {
+  const wk = configArray.find(aConfig => {
+    return undefined !== aConfig.ends.find(nameEnd => docPath.endsWith(nameEnd));
+  });
+  const procConfig = {
+    updateOnSave: (wk !== undefined && wk.updateOnSave !== undefined)
+      ? wk.updateOnSave : false,
+    updateProc: wk !== undefined ? wk.updateProc : [],
+  } as SbcTarget;
+  // currently no-reject
+  if(procConfig.updateOnSave !== true) {
+    return Promise.resolve([]);
+  }
+  else if(procConfig.updateProc.length === 0) {
+    vscode.window.showInformationMessage('before exec ctags: too few args');
+    return Promise.resolve([]);
+  }
+  const proc = spawn(
+    procConfig.updateProc[0], procConfig.updateProc.slice(1).concat(docPath)
+  );
+  proc.stdout.setEncoding('utf8');
+
+  return new Promise<string[]>((resolve, _reject) => {
+    let wkStack = '';
+    proc.stdout.on('data', data => {
+      wkStack += data;
+    });
+    proc.on('close', code => {
+      console.log(`close ${code}`);
+      // you can not rely on os.EOL
+      const eol = wkStack.includes('\r\n') ? '\r\n' : '\n';
+      resolve(wkStack.split(eol));
+    });
+    proc.on('error', err => {
+      vscode.window.showInformationMessage(`on exec ctags: ${err}`);
     });
   });
 };
