@@ -3,6 +3,9 @@ import fs from 'fs';
 import { spawn } from 'child_process';
 import readline from 'readline';
 
+/*
+ * must dispose() on deactivation.
+ */
 let onSaveSubscription: vscode.Disposable;
 
 export function activate(context: vscode.ExtensionContext) {
@@ -449,15 +452,9 @@ const buildSub = (tagsPath: string, curWsInfo: eachWorkspace) => {
     }
     curWsInfo.docSymbolMap.set(normalizePathAsKey(docUri.path), eachFileSymbols);
   };
-  const rs = fs.createReadStream(`${tagsPath}`);
-  const lines = readline.createInterface(rs);
 
-  return new Promise<boolean>((resolve, _reject) => {
-    lines.on('line', line => {
-      if(line.startsWith('!_TAG_')) {
-        return;
-      }
-
+  return getTagsFileContent(tagsPath).then(allLines => {
+    for(const line of allLines) {
       // currently read all lines. if 'not sorted by symbolname', to stop readline is better.
       const tokens = line.split('\t');
 
@@ -609,12 +606,26 @@ const buildSub = (tagsPath: string, curWsInfo: eachWorkspace) => {
       else {
         eachFileSymbols.push(currentSymbol);
       }
-    });
+    }
+    endOfSameFile(lastFileUriInTokens);
+    return true;
+  });
+};
 
+const getTagsFileContent = (tagsPath: string): Promise<string[]> => {
+  const allLines: string[] = [];
+  const rs = fs.createReadStream(`${tagsPath}`);
+  const lines = readline.createInterface(rs);
+
+  return new Promise<string[]>((resolve, _reject) => {
+    lines.on('line', line => {
+      if(line.startsWith('!_TAG_') === false) {
+        allLines.push(line);
+      }
+    });
     lines.on('close', () => {
-      endOfSameFile(lastFileUriInTokens);
       rs.destroy();
-      resolve(true);
+      resolve(allLines);
     });
   });
 };
