@@ -24,6 +24,7 @@ via `Ctrl+Shift+O` (or type `@` after `Ctrl+P`)
 
 Since 0.10.0, you can workspace-wide symbol search via `Ctrl+T` (case-sensitive and rough).
 
+Since 0.14.0, you can update on-memory symbol information on `Save` the file (and stil need to have `tags` file for initial state).
 
 # command
 
@@ -103,6 +104,10 @@ and each settings-object has some properties.
   because apparently we can not cover so much pattern of code-structure.
   But we may get more accurate range of each definition and utilize that for other feature,
   so this experiment happened.
+* `updateOnSave`: boolean. `true` means to update symbols information on `Save` the file.
+* `updateProc`: array of string, that represents an execution of ctags program.
+  This works only for **updating** on-memory symbols information on `Save`, not for generation of initial `tags` file.
+  This array starts with ctags executable, and needs to be passed stdio. See example below.
 
 ## `fixedTagsFile`
 
@@ -150,7 +155,15 @@ For workspace following, write to `some.code-workspace` file:
           "kindMap": {
             "s": "Struct",
           },
-          "sro": "|"
+          "sro": "|",
+          "updateOnSave": true,
+          "updateProc": [
+            "python",
+            "x:/path/to/rst2ctags.py",
+            "-f",
+            "-",
+            "--sort=no",
+          ],
         },
         {
           "name": "pony",
@@ -167,8 +180,17 @@ For workspace following, write to `some.code-workspace` file:
             "p": "Class",
             "y": "Class",
           },
-          "restartTree": "acipty"
+          "restartTree": "acipty",
           // or "offSideRule": true
+          "updateOnSave": true,
+          "updateProc": [
+            "ctags",
+            "-f",
+            "-",
+            "--sort=no",
+            "--fields=nksaSmtf",
+            "--languages=pony",
+          ],
         }
       ]
     }
@@ -218,3 +240,6 @@ Maybe all things are easy to be changed, excuse me.
 * do not watch the change of settings file. If re-open workspace, changes will be effected.
 * If any document is not yet opened at all, `Ctrl+T` will not work.
 * ~~As for tags file of `fixedTagsFile` settings, no update to tags file will not be work after loaded once.~~ at ver. 0.13.1 resolved.
+* VS Code does not update `Outline` pane on `Save`, but does on modification of file.
+  So, you need to modify file for updating that pane.
+  As for `Ctrl+Shift+O` and `Ctrl+T`, you do not need such a operation.
