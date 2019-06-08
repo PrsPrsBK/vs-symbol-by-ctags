@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import fs from 'fs';
 import { spawn } from 'child_process';
 import readline from 'readline';
+import { resolve } from 'url';
 
 /*
  * must dispose() on deactivation.
@@ -159,13 +160,6 @@ export class CtagsWorkspaceSymbolProvider implements vscode.WorkspaceSymbolProvi
     });
   }
 }
-
-const updateForDoc = (textEditor: vscode.TextDocument) => {
-  const docPath = normalizePathAsKey(textEditor.uri.path);
-  getTagsLineFromExec(docPath).then(allLines => {
-    console.log(`LENGTH ${allLines.length}`);
-  });
-};
 
 const getLatestFixedTagsSpace = (): Promise<typeof fixedTagsspace> => {
   const waiting: ReturnType<typeof buildFixedTagsInfo>[] = [];
@@ -359,7 +353,9 @@ const getDocumentSymbols = (document: vscode.TextDocument): Promise<vscode.Docum
     allWorkspace.set(wfPathAsKey, curWsInfo);
 
     return new Promise<vscode.DocumentSymbol[]>((resolve, _reject) => {
-      buildSub(tagsPath, curWsInfo).then(_result => {
+      getTagsFileContent(tagsPath).then(allLines => {
+        return buildSub(tagsPath, curWsInfo, allLines);
+      }).then(_result => {
         resolve(curWsInfo.docSymbolMap.get(docFilePath));
       });
     });
@@ -380,10 +376,12 @@ const buildFixedTagsInfo = (pathInConfig: string) => {
   } as eachWorkspace;
   fixedTagsspace.set(tagsPathAsKey, fixedTagsInfo);
 
-  return buildSub(tagsPathAsKey, fixedTagsInfo);
+  return getTagsFileContent(tagsPathAsKey).then(allLines => {
+    return buildSub(tagsPathAsKey, fixedTagsInfo, allLines);
+  });
 };
 
-const buildSub = (tagsPath: string, curWsInfo: eachWorkspace) => {
+const buildSub = (tagsPath: string, curWsInfo: eachWorkspace, allLines: string[]) => {
   const tagsDirFsPath = tagsPath.replace(/(.+)\/[^\/]+$/, '$1');
   let eachFileSymbols: vscode.DocumentSymbol[] = [];
   let currentTreeTop = '';
@@ -428,7 +426,7 @@ const buildSub = (tagsPath: string, curWsInfo: eachWorkspace) => {
     curWsInfo.docSymbolMap.set(normalizePathAsKey(docUri.path), eachFileSymbols);
   };
 
-  return getTagsFileContent(tagsPath).then(allLines => {
+  return new Promise<boolean>((resolve, _reject) => {
     for(const line of allLines) {
       if(line.startsWith('!_TAG_')) {
         continue;
@@ -589,7 +587,7 @@ const buildSub = (tagsPath: string, curWsInfo: eachWorkspace) => {
       }
     }
     endOfSameFile(lastFileUriInTokens);
-    return true;
+    resolve(true);
   });
 };
 
@@ -606,6 +604,13 @@ const getTagsFileContent = (tagsPath: string): Promise<string[]> => {
       rs.destroy();
       resolve(allLines);
     });
+  });
+};
+
+const updateForDoc = (textEditor: vscode.TextDocument) => {
+  const docPath = normalizePathAsKey(textEditor.uri.path);
+  getTagsLineFromExec(docPath).then(allLines => {
+    console.log(`LENGTH ${allLines.length}`);
   });
 };
 
