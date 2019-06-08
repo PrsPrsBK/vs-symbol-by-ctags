@@ -608,8 +608,20 @@ const getTagsFileContent = (tagsPath: string): Promise<string[]> => {
 
 const updateForDoc = (document: vscode.TextDocument) => {
   const docFilePath = normalizePathAsKey(document.uri.path);
+  const wf = vscode.workspace.getWorkspaceFolder(document.uri);
+  if(wf === undefined) {
+    return;
+  }
+  const wfPathAsKey = normalizePathAsKey(wf.uri.path);
+  const curWsInfo = allWorkspace.get(wfPathAsKey);
+  if(curWsInfo === undefined) {
+    return;
+  }
+  curWsInfo.docRangeMap.set(docFilePath, []);
+  curWsInfo.docSymbolMap.set(docFilePath, []);
+  curWsInfo.wsSymbolArray = curWsInfo.wsSymbolArray.filter(si => si.containerName !== docFilePath);
   getTagsLineFromExec(docFilePath).then(allLines => {
-    console.log(`LENGTH ${allLines.length}`);
+    buildSub('', curWsInfo, allLines);
   });
 };
 
