@@ -608,6 +608,23 @@ const getTagsFileContent = (tagsPath: string): Promise<string[]> => {
 
 const updateForDoc = (document: vscode.TextDocument) => {
   const docFilePath = normalizePathAsKey(document.uri.path);
+  const wk = configArray.find(aConfig => {
+    return undefined !== aConfig.ends.find(nameEnd => docFilePath.endsWith(nameEnd));
+  });
+  const procConfig = {
+    updateOnSave: (wk !== undefined && wk.updateOnSave !== undefined)
+      ? wk.updateOnSave : false,
+    updateProc: wk !== undefined ? wk.updateProc : [],
+  } as SbcTarget;
+  if(procConfig.updateOnSave !== true) {
+    return;
+  }
+  else if(procConfig.updateProc.length === 0) {
+    vscode.window.showInformationMessage('before exec ctags: too few args');
+    return;
+  }
+  const procSpec = procConfig.updateProc.concat(docFilePath);
+
   if(getParentFixedTagsPath(docFilePath) !== undefined) {
     return getParentFixedTagsInfo(docFilePath).then(ftInfo => {
       if(ftInfo === undefined) {
@@ -616,7 +633,7 @@ const updateForDoc = (document: vscode.TextDocument) => {
       ftInfo.docRangeMap.set(docFilePath, []);
       ftInfo.docSymbolMap.set(docFilePath, []);
       ftInfo.wsSymbolArray = ftInfo.wsSymbolArray.filter(si => si.containerName !== docFilePath);
-      getTagsLineFromExec(docFilePath).then(allLines => {
+      getTagsLineFromExec(procSpec).then(allLines => {
         buildSub('', ftInfo, allLines);
       });
     });
@@ -634,31 +651,15 @@ const updateForDoc = (document: vscode.TextDocument) => {
     curWsInfo.docRangeMap.set(docFilePath, []);
     curWsInfo.docSymbolMap.set(docFilePath, []);
     curWsInfo.wsSymbolArray = curWsInfo.wsSymbolArray.filter(si => si.containerName !== docFilePath);
-    getTagsLineFromExec(docFilePath).then(allLines => {
+    getTagsLineFromExec(procSpec).then(allLines => {
       buildSub('', curWsInfo, allLines);
     });
   }
 };
 
-const getTagsLineFromExec = (docPath: string): Promise<string[]> => {
-  const wk = configArray.find(aConfig => {
-    return undefined !== aConfig.ends.find(nameEnd => docPath.endsWith(nameEnd));
-  });
-  const procConfig = {
-    updateOnSave: (wk !== undefined && wk.updateOnSave !== undefined)
-      ? wk.updateOnSave : false,
-    updateProc: wk !== undefined ? wk.updateProc : [],
-  } as SbcTarget;
-  // currently no-reject
-  if(procConfig.updateOnSave !== true) {
-    return Promise.resolve([]);
-  }
-  else if(procConfig.updateProc.length === 0) {
-    vscode.window.showInformationMessage('before exec ctags: too few args');
-    return Promise.resolve([]);
-  }
+const getTagsLineFromExec = (procSpec: string[]): Promise<string[]> => {
   const proc = spawn(
-    procConfig.updateProc[0], procConfig.updateProc.slice(1).concat(docPath)
+    procSpec[0], procSpec.slice(1)
   );
   proc.stdout.setEncoding('utf8');
 
