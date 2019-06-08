@@ -161,34 +161,49 @@ export class CtagsWorkspaceSymbolProvider implements vscode.WorkspaceSymbolProvi
 }
 
 const updateForDoc = (textEditor: vscode.TextDocument) => {
+  const docPath = normalizePathAsKey(textEditor.uri.path);
+  getTagsLineFromExec(docPath).then(allLines => {
+    console.log(`LENGTH ${allLines.length}`);
+  });
+};
+
+const getTagsLineFromExec = (docPath: string): Promise<string[]> => {
   const wk = configArray.find(aConfig => {
-    return undefined !== aConfig.ends.find(nameEnd => textEditor.uri.path.endsWith(nameEnd));
+    return undefined !== aConfig.ends.find(nameEnd => docPath.endsWith(nameEnd));
   });
   const procConfig = {
     updateOnSave: (wk !== undefined && wk.updateOnSave !== undefined)
       ? wk.updateOnSave : false,
     updateProc: wk !== undefined ? wk.updateProc : [],
   } as SbcTarget;
+  // currently no-reject
   if(procConfig.updateOnSave !== true) {
-    return;
+    return Promise.resolve([]);
   }
   else if(procConfig.updateProc.length === 0) {
     vscode.window.showInformationMessage('before exec ctags: too few args');
-    return;
+    return Promise.resolve([]);
   }
   const proc = spawn(
-    procConfig.updateProc[0], procConfig.updateProc.slice(1).concat(normalizePathAsKey(textEditor.uri.path))
+    procConfig.updateProc[0], procConfig.updateProc.slice(1).concat(docPath)
   );
   proc.stdout.setEncoding('utf8');
 
-  proc.stdout.on('data', data => {
-    console.log(`${typeof data} ${data}`);
-  });
-  proc.on('close', code => {
-    console.log(`close ${code}`);
-  });
-  proc.on('error', err => {
-    vscode.window.showInformationMessage(`on exec ctags: ${err}`);
+  return new Promise<string[]>((resolve, _reject) => {
+    let wkStack = '';
+    proc.stdout.on('data', data => {
+      console.log(`${typeof data} ${data}`);
+      wkStack += data;
+    });
+    proc.on('close', code => {
+      console.log(`close ${code}`);
+      // you can not rely on os.EOL
+      const eol = wkStack.includes('\r\n') ? '\r\n' : '\n';
+      resolve(wkStack.split(eol));
+    });
+    proc.on('error', err => {
+      vscode.window.showInformationMessage(`on exec ctags: ${err}`);
+    });
   });
 };
 
