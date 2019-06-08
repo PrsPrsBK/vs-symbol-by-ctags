@@ -1,11 +1,11 @@
 # Latest
 
-## 0.13.0
+# 0.14.0
 
-* 2019-06-01 0.13.0 new setting: `fixedTagsFile` array.
-  You can refer some tags files constantly from your opened Workspace or Folder.
-* 2019-06-02 0.13.1 reload fixed tags file when modified.
-* fix: any configuration does not works for `fixedTagsFile`
+* 2019-06-08 update symbols information on `Save` via `updateOnSave` and `updateProc` settings.
+  *Limitation* VS Code does not update `Outline` pane on `Save`, but does on modification of file.
+  So, you need to modify file for updating that pane.
+  As for `Ctrl+Shift+O` and `Ctrl+T`, you do not need such a operation.
 
 # Release Notes
 
@@ -95,3 +95,10 @@ PowerShell$ python d:/bin/rst2ctags.py -f .tags --sort=no docFoo.rst docBar.rst 
 * 2019-05-27 0.12.1 fix: work only for first document.
 * 2019-05-27 0.12.2 (again) do not read tags file again when not modified
 * 2019-05-28 0.12.3 fix: (Workaround) sometimes Uri.path has DriveName with UpperCase.
+
+## 0.13.0
+
+* 2019-06-01 0.13.0 new setting: `fixedTagsFile` array.
+  You can refer some tags files constantly from your opened Workspace or Folder.
+* 2019-06-02 0.13.1 reload fixed tags file when modified.
+* fix: any configuration does not works for `fixedTagsFile`
