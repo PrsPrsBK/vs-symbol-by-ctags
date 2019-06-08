@@ -354,7 +354,7 @@ const getDocumentSymbols = (document: vscode.TextDocument): Promise<vscode.Docum
 
     return new Promise<vscode.DocumentSymbol[]>((resolve, _reject) => {
       getTagsFileContent(tagsPath).then(allLines => {
-        return buildSub(tagsPath, curWsInfo, allLines);
+        return buildSub(tagsDirFsPath, curWsInfo, allLines);
       }).then(_result => {
         resolve(curWsInfo.docSymbolMap.get(docFilePath));
       });
@@ -377,12 +377,11 @@ const buildFixedTagsInfo = (pathInConfig: string) => {
   fixedTagsspace.set(tagsPathAsKey, fixedTagsInfo);
 
   return getTagsFileContent(tagsPathAsKey).then(allLines => {
-    return buildSub(tagsPathAsKey, fixedTagsInfo, allLines);
+    return buildSub(tagsPathAsKey.replace(/(.+)\/[^\/]+$/, '$1'), fixedTagsInfo, allLines);
   });
 };
 
-const buildSub = (tagsPath: string, curWsInfo: eachWorkspace, allLines: string[]) => {
-  const tagsDirFsPath = tagsPath.replace(/(.+)\/[^\/]+$/, '$1');
+const buildSub = (relativeRoot: string, curWsInfo: eachWorkspace, allLines: string[]) => {
   let eachFileSymbols: vscode.DocumentSymbol[] = [];
   let currentTreeTop = '';
   let parentArray: [string, number][] = [];
@@ -441,7 +440,7 @@ const buildSub = (tagsPath: string, curWsInfo: eachWorkspace, allLines: string[]
       // On Windows, spec within tags file may have paths separated by backslash.
       const fileNameInTokens = tokens[1].replace(/\\/g, '/');
       // Maybe it is better to validate path.
-      const fileUriInTokens = vscode.Uri.file(`${tagsDirFsPath}/${fileNameInTokens}`);
+      const fileUriInTokens = vscode.Uri.file(`${relativeRoot}/${fileNameInTokens}`);
 
       if(lastFileNameInTokens === '') {
         lastFileNameInTokens = fileNameInTokens;
@@ -607,9 +606,9 @@ const getTagsFileContent = (tagsPath: string): Promise<string[]> => {
   });
 };
 
-const updateForDoc = (textEditor: vscode.TextDocument) => {
-  const docPath = normalizePathAsKey(textEditor.uri.path);
-  getTagsLineFromExec(docPath).then(allLines => {
+const updateForDoc = (document: vscode.TextDocument) => {
+  const docFilePath = normalizePathAsKey(document.uri.path);
+  getTagsLineFromExec(docFilePath).then(allLines => {
     console.log(`LENGTH ${allLines.length}`);
   });
 };
