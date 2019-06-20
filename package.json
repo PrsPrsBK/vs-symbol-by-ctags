@@ -7,7 +7,7 @@
   "license": "MIT",
   "repository": "https://github.com/PrsPrsBK/vs-symbol-by-ctags",
   "devDependencies": {
-    "@types/node": "^11.13.6",
+    "@types/node": "^12.0.0",
     "vscode": "^1.1.33"
   },
   "categories": [
