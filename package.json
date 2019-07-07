@@ -90,7 +90,7 @@
     }
   },
   "engines": {
-    "vscode": "^1.33.0"
+    "vscode": "^1.36.0"
   },
   "icon": "sbc-128.png",
   "keywords": [
