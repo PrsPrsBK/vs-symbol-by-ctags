@@ -2,7 +2,6 @@ import * as vscode from 'vscode';
 import fs from 'fs';
 import { spawn } from 'child_process';
 import readline from 'readline';
-import { resolve } from 'url';
 
 /*
  * must dispose() on deactivation.
