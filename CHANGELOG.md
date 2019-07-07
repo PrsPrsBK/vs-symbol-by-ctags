@@ -2,10 +2,11 @@
 
 ## 0.14.0
 
-* 2019-06-08 update on-memory symbols information on `Save` via `updateOnSave` and `updateProc` settings.
+* 2019-06-08 0.14.0 update on-memory symbols information on `Save` via `updateOnSave` and `updateProc` settings.
   *Limitation* VS Code does not update `Outline` pane on `Save`, but does on modification of file.
   So, you need to modify file for updating that pane.
   As for `Ctrl+Shift+O` and `Ctrl+T`, you do not need such a operation.
+* 2019-07-07 0.14.1 fix: successive backslashs within path token of tags file can not be handled correctly 
 
 # Release Notes
 
