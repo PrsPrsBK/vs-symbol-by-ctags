@@ -437,7 +437,7 @@ const buildSub = (relativeRoot: string, curWsInfo: eachWorkspace, allLines: stri
 
       const symbolName = tokens[0];
       // On Windows, spec within tags file may have paths separated by backslash.
-      const fileNameInTokens = tokens[1].replace(/\\/g, '/');
+      const fileNameInTokens = tokens[1].replace(/\\\\/g, '/').replace(/\\/g, '/');
       // Maybe it is better to validate path.
       const fileUriInTokens = vscode.Uri.file(`${relativeRoot}/${fileNameInTokens}`);
 
