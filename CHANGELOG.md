@@ -6,7 +6,8 @@
   *Limitation* VS Code does not update `Outline` pane on `Save`, but does on modification of file.
   So, you need to modify file for updating that pane.
   As for `Ctrl+Shift+O` and `Ctrl+T`, you do not need such a operation.
-* 2019-07-07 0.14.1 fix: successive backslashs within path token of tags file can not be handled correctly 
+* 2019-07-07 0.14.1 fix: successive backslashs within path token of tags file can not be handled correctly.
+  This fix is intended to work for universal-ctags on Windows. 
 
 # Release Notes
 
