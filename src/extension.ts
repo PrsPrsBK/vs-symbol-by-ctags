@@ -438,18 +438,19 @@ const buildSub = (relativeRoot: string, curWsInfo: eachWorkspace, allLines: stri
       const symbolName = tokens[0];
       // On Windows, spec within tags file may have paths separated by backslash.
       const fileNameInTokens = tokens[1].replace(/\\\\/g, '/').replace(/\\/g, '/');
+      const absFilePathInTokens = `${relativeRoot}${relativeRoot !== '' ? '/' : ''}${fileNameInTokens}`;
       // Maybe it is better to validate path.
-      const fileUriInTokens = vscode.Uri.file(`${relativeRoot}/${fileNameInTokens}`);
+      const fileUriInTokens = vscode.Uri.file(absFilePathInTokens);
 
       if(lastFileNameInTokens === '') {
-        lastFileNameInTokens = fileNameInTokens;
+        lastFileNameInTokens = absFilePathInTokens;
         lastFileUriInTokens = fileUriInTokens;
         lastLineNum = 0
         wkConfig = getCleanConfig(fileUriInTokens);
       }
-      else if(fileNameInTokens !== lastFileNameInTokens) {
+      else if(absFilePathInTokens !== lastFileNameInTokens) {
         endOfSameFile(lastFileUriInTokens);
-        lastFileNameInTokens = fileNameInTokens;
+        lastFileNameInTokens = absFilePathInTokens;
         lastFileUriInTokens = fileUriInTokens;
         lastLineNum = 0
         wkConfig = getCleanConfig(fileUriInTokens);
@@ -477,7 +478,7 @@ const buildSub = (relativeRoot: string, curWsInfo: eachWorkspace, allLines: stri
         new vscode.SymbolInformation(
           symbolName,
           kind,
-          fileNameInTokens,
+          absFilePathInTokens,
           new vscode.Location(fileUriInTokens, symbolNameRange)
         )
       );
