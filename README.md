@@ -243,3 +243,10 @@ Maybe all things are easy to be changed, excuse me.
 * VS Code does not update `Outline` pane on `Save`, but does on modification of file.
   So, you need to modify file for updating that pane.
   As for `Ctrl+Shift+O` and `Ctrl+T`, you do not need such a operation.
+
+
+# Thanks
+
+Icon uses [hakusyu font(白舟書体)](http://www.hakusyu.com/), semi-cursive script edition (hkgyokk.zip).
+[LICENSE(Japanese)](http://www.hakusyu.com/licensing.htm#8)
+
