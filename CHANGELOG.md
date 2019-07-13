@@ -7,7 +7,7 @@
   So, you need to modify file for updating that pane.
   As for `Ctrl+Shift+O` and `Ctrl+T`, you do not need such a operation.
 * 2019-07-07 0.14.1 fix: successive backslashs within path token of tags file can not be handled correctly(#2).
-  This fix is intended to work for universal-ctags on Windows. 
+  This fix is intended to work for [universal-ctags/ctags-win32](https://github.com/universal-ctags/ctags-win32).
 * 2019-07-09 0.14.2 Workspace symbols are updated as another entities with absolute path(#3).
   After this patch, absolute paths are shown in `QuickOutline` (`Ctrl+T`).
 
